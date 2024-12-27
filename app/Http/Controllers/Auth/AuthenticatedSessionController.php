@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\User;
+use App\Enums\RolesEnum;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -27,13 +29,22 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request): \Symfony\Component\HttpFoundation\Response
     {
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        /** @var User $user */
+        $user = Auth::user();
+        $route = "/";
+        if($user -> hasAnyRole([RolesEnum::Admin, RolesEnum::Vendor, ])){
+            return Inertia::location(route('filament.admin.pages.dashboard'));
+        } else if($user->hasAnyRole([RolesEnum::User])){
+            $route = route('dashboard', absolute: false);
+        }
+
+        return redirect()->intended(route($route));
     }
 
     /**
