@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Enums\RolesEnum;
+use Closure;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -18,7 +19,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
+use Illuminate\Database\Eloquent\Model;
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -41,7 +42,7 @@ class AdminPanelProvider extends PanelProvider
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
             ])
-            ->middleware([
+            ->middleware(middleware: [
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
@@ -52,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 'auth',
-                sprintf('role:%s|$s',
+                sprintf('role:%s|%s',
                     RolesEnum::Admin->value,
                     RolesEnum::Vendor->value,
                 )
@@ -60,5 +61,10 @@ class AdminPanelProvider extends PanelProvider
 //            ->authMiddleware([
 //                Authenticate::class,
 //            ]);
+    }
+
+    public function boot()
+    {
+        Model::unguard();
     }
 }

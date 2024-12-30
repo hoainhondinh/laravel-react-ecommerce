@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\User;
@@ -28,6 +29,7 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
+     * @throws ValidationException
      */
     public function store(LoginRequest $request): \Symfony\Component\HttpFoundation\Response
     {
@@ -38,13 +40,13 @@ class AuthenticatedSessionController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $route = "/";
-        if($user -> hasAnyRole([RolesEnum::Admin, RolesEnum::Vendor, ])){
+        if($user -> hasAnyRole([RolesEnum::Admin, RolesEnum::Vendor])){
             return Inertia::location(route('filament.admin.pages.dashboard'));
-        } else if($user->hasAnyRole([RolesEnum::User])){
+        } else{
             $route = route('dashboard', absolute: false);
         }
 
-        return redirect()->intended(route($route));
+        return redirect()->intended($route);
     }
 
     /**
