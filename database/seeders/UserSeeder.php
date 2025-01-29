@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Enums\RolesEnum;
+use App\Enums\VendorStatusEnum;
 use App\Models\User;
+use App\Models\Vendor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 class UserSeeder extends Seeder
@@ -19,11 +21,26 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password123')
         ])->assignRole(RolesEnum::User->value);
 
-        User::factory()->create([
+        $user = User::factory()->create([
             'name' => 'Vendor',
             'email' => 'vendor@example.com',
             'password' => Hash::make('password123')
-        ])->assignRole(RolesEnum::Vendor->value);
+        ]);
+        $user->assignRole(RolesEnum::Vendor->value);
+        Vendor::factory()->create([
+           'user_id' => $user->id,
+            'status' => VendorStatusEnum::Approved,
+            'store_name' => 'Vendor Store',
+            'store_address' => fake()->address(),
+        ]);
+
+        $user2 = User::factory()->create([
+            'name' => 'Vendor2',
+            'email' => 'vendor2@example.com',
+            'password' => Hash::make('password123')
+        ]);
+        $user2->assignRole(RolesEnum::Vendor->value);
+
 
         User::factory()->create([
             'name' => 'Admin',

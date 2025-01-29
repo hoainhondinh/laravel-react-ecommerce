@@ -1,0 +1,16 @@
+/* Custom Admin Theme */
+.filament-sidebar {
+    @apply bg-primary-800;
+}
+
+.filament-main {
+    @apply bg-gray-50;
+}
+
+.filament-card {
+    @apply rounded-lg shadow-sm border-0;
+}
+
+.filament-tables-container {
+    @apply bg-white rounded-lg shadow-sm;
+}

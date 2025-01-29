@@ -8,22 +8,30 @@
     "devDependencies": {
         "@headlessui/react": "^2.0.0",
         "@inertiajs/react": "^2.0.0",
+        "@types/dompurify": "^3.0.5",
         "@types/node": "^18.13.0",
-        "@types/react": "^18.0.28",
-        "@types/react-dom": "^18.0.10",
+        "@types/react": "^18.3.20",
+        "@types/react-dom": "^18.3.5",
+        "@types/react-helmet": "^6.1.11",
+        "@types/react-router-dom": "^5.3.3",
         "@vitejs/plugin-react": "^4.2.0",
         "autoprefixer": "^10.4.12",
-        "axios": "^1.7.4",
+        "axios": "^1.8.4",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^1.0",
         "postcss": "^8.4.31",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "tailwindcss": "^3.2.1",
-        "typescript": "^5.0.2",
+        "typescript": "^5.8.2",
         "vite": "^6.0"
     },
     "dependencies": {
-        "daisyui": "^4.12.22"
+        "@heroicons/react": "^2.2.0",
+        "daisyui": "^4.12.22",
+        "dompurify": "^3.2.4",
+        "react-helmet": "^6.1.0",
+        "react-router-dom": "^7.4.1",
+        "react-toastify": "^11.0.3"
     }
 }
