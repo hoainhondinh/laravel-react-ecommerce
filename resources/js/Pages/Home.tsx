@@ -1,3 +1,4 @@
+// resources/js/Pages/Home.tsx
 import { PageProps, PaginationProps, Product, BlogPost, Banner } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -8,35 +9,42 @@ import BannerCarousel from "@/Components/App/BannerCarousel";
 export default function Home({
                                products,
                                blogPosts,
-                               banners = [],
+                               banners,
                              }: PageProps<{
   products: PaginationProps<Product>,
   blogPosts: BlogPost[],
   banners?: Banner[]
 }>) {
+
+  // Debug để kiểm tra dữ liệu
+  console.log('Banners received in Home component:', banners);
+
   return (
     <AuthenticatedLayout>
       <Head title="Home"/>
 
-      {/* Banner Carousel */}
-      {banners.length > 0 && (
+      {/* Banner Carousel với kiểm tra chi tiết hơn */}
+      {banners && Array.isArray(banners) && banners.length > 0 ? (
         <div className="w-full">
           <BannerCarousel banners={banners} />
         </div>
+      ) : (
+        // Debug khi không có banner
+        <div className="hidden">No banners available: {JSON.stringify(banners)}</div>
       )}
 
-      <div className="hero bg-gray-200 h-[300px]">
-        <div className="hero-content text-center">
-          <div className="max-w-md">
-            <h1 className="text-5xl font-bold">Hello there</h1>
-            <p className="py-6">
-              Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem
-              quasi. In deleniti eaque aut repudiandae et a id nisi.
-            </p>
-            <button className="btn btn-primary">Get Started</button>
-          </div>
-        </div>
-      </div>
+      {/*<div className="hero bg-gray-200 h-[300px]">*/}
+      {/*  <div className="hero-content text-center">*/}
+      {/*    <div className="max-w-md">*/}
+      {/*      <h1 className="text-5xl font-bold">Hello there</h1>*/}
+      {/*      <p className="py-6">*/}
+      {/*        Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem*/}
+      {/*        quasi. In deleniti eaque aut repudiandae et a id nisi.*/}
+      {/*      </p>*/}
+      {/*      <button className="btn btn-primary">Get Started</button>*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*</div>*/}
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 p-8">
         {products.data.map(product => (

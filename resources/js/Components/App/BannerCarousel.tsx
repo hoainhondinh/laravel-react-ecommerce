@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface BannerImage {
   desktop: string;
@@ -7,7 +7,7 @@ interface BannerImage {
 
 interface Banner {
   id: number;
-  title: string;
+  title?: string;
   description?: string;
   url?: string;
   image: BannerImage;
@@ -20,30 +20,64 @@ interface BannerCarouselProps {
 const BannerCarousel: React.FC<BannerCarouselProps> = ({ banners }) => {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isHovering, setIsHovering] = useState<boolean>(false);
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
+  const [containerHeight, setContainerHeight] = useState<number>(400); // Chiều cao mặc định
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Tự động chuyển slide sau mỗi 5 giây nếu không hover
+  // Xử lý auto-rotation
   useEffect(() => {
+    // Clear interval hiện tại nếu có
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // Chỉ tạo interval mới nếu có nhiều hơn 1 banner và không đang hover
     if (!isHovering && banners.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentIndex((prevIndex) =>
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex(prevIndex =>
           prevIndex === banners.length - 1 ? 0 : prevIndex + 1
         );
       }, 5000);
-
-      return () => clearInterval(interval);
     }
-  }, [currentIndex, isHovering, banners.length]);
+
+    // Cleanup function
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isHovering, banners.length, currentIndex]);
 
   // Xử lý khi không có banner nào
-  if (!banners || banners.length === 0) {
+  if (!banners || !Array.isArray(banners) || banners.length === 0) {
     return null;
   }
+
+  // Hàm xử lý khi ảnh tải xong để tính toán chiều cao phù hợp
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setImageLoaded(true);
+    if (containerRef.current) {
+      // Cập nhật chiều cao container dựa trên hình ảnh đã tải
+      setContainerHeight(e.currentTarget.clientHeight);
+    }
+  };
 
   // Chỉ hiển thị 1 banner không cần controls
   if (banners.length === 1) {
     const banner = banners[0];
+
     return (
-      <div className="w-full overflow-hidden">
+      <div
+        className="w-full overflow-hidden relative"
+        ref={containerRef}
+        style={{
+          minHeight: imageLoaded ? 'auto' : `${containerHeight}px`,
+          height: 'auto'
+        }}
+      >
         <a
           href={banner.url || '#'}
           className="block w-full"
@@ -55,15 +89,19 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({ banners }) => {
             <source media="(min-width: 769px)" srcSet={banner.image.desktop} />
             <img
               src={banner.image.desktop}
-              alt={banner.title}
+              alt={banner.title || 'Banner image'}
               className="w-full h-auto object-cover"
+              onLoad={handleImageLoad}
             />
           </picture>
 
+          {/* Chỉ hiển thị overlay khi có title hoặc description */}
           {(banner.title || banner.description) && (
-            <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 text-white p-4">
-              {banner.title && <h2 className="text-xl font-bold">{banner.title}</h2>}
-              {banner.description && <p className="text-sm mt-1">{banner.description}</p>}
+            <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-60 text-white p-4 z-10">
+              <div className="container mx-auto px-4 md:px-8">
+                {banner.title && <h2 className="text-xl md:text-2xl font-bold mb-1">{banner.title}</h2>}
+                {banner.description && <p className="text-sm md:text-base">{banner.description}</p>}
+              </div>
             </div>
           )}
         </a>
@@ -75,43 +113,70 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({ banners }) => {
   return (
     <div
       className="relative w-full overflow-hidden"
+      ref={containerRef}
+      style={{
+        minHeight: imageLoaded ? 'auto' : `${containerHeight}px`,
+        height: 'auto'
+      }}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className="relative">
-        {banners.map((banner, index) => (
-          <div
-            key={banner.id}
-            className={`transition-opacity duration-500 absolute top-0 left-0 w-full ${
-              index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-            }`}
-            style={{ display: index === currentIndex ? 'block' : 'none' }}
-          >
-            <a
-              href={banner.url || '#'}
-              className="block w-full relative"
-              target={banner.url?.startsWith('http') ? '_blank' : '_self'}
-              rel={banner.url?.startsWith('http') ? 'noopener noreferrer' : ''}
-            >
-              <picture>
-                <source media="(max-width: 768px)" srcSet={banner.image.mobile} />
-                <source media="(min-width: 769px)" srcSet={banner.image.desktop} />
-                <img
-                  src={banner.image.desktop}
-                  alt={banner.title}
-                  className="w-full h-auto object-cover"
-                />
-              </picture>
+      {/* Banner container */}
+      <div
+        className="relative"
+        style={{
+          minHeight: imageLoaded ? 'auto' : `${containerHeight}px`,
+          height: 'auto'
+        }}
+      >
+        {banners.map((banner, index) => {
+          const isActive = index === currentIndex;
 
-              {(banner.title || banner.description) && (
-                <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 text-white p-4">
-                  {banner.title && <h2 className="text-xl font-bold">{banner.title}</h2>}
-                  {banner.description && <p className="text-sm mt-1">{banner.description}</p>}
-                </div>
-              )}
-            </a>
-          </div>
-        ))}
+          return (
+            <div
+              key={banner.id}
+              className={`transition-all duration-500 w-full ${
+                isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+              style={{
+                position: isActive ? 'relative' : 'absolute',
+                top: 0,
+                left: 0,
+                height: 'auto',
+                display: isActive ? 'block' : 'none'
+              }}
+            >
+              <a
+                href={banner.url || '#'}
+                className="block w-full relative"
+                target={banner.url?.startsWith('http') ? '_blank' : '_self'}
+                rel={banner.url?.startsWith('http') ? 'noopener noreferrer' : ''}
+              >
+                <picture>
+                  <source media="(max-width: 768px)" srcSet={banner.image.mobile} />
+                  <source media="(min-width: 769px)" srcSet={banner.image.desktop} />
+                  <img
+                    src={banner.image.desktop}
+                    alt={banner.title || 'Banner image'}
+                    className="w-full h-auto object-cover"
+                    onLoad={isActive ? handleImageLoad : undefined}
+                    style={{ display: 'block' }}
+                  />
+                </picture>
+
+                {/* Chỉ hiển thị overlay khi có title hoặc description */}
+                {(banner.title || banner.description) && (
+                  <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-60 text-white p-4 z-10">
+                    <div className="container mx-auto px-4 md:px-8">
+                      {banner.title && <h2 className="text-xl md:text-2xl font-bold mb-1">{banner.title}</h2>}
+                      {banner.description && <p className="text-sm md:text-base">{banner.description}</p>}
+                    </div>
+                  </div>
+                )}
+              </a>
+            </div>
+          );
+        })}
       </div>
 
       {/* Navigation arrows */}
