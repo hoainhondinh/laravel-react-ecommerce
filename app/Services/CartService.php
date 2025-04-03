@@ -115,7 +115,8 @@ class CartService
                         'image' => $imageUrl ?: $product->getFirstMediaUrl('images', 'small'),
                         'user' => [
                             'id' => $product->created_by,
-                            'name' => $product->user->vendor->store_name,
+//                            'name' => $product->user->vendor->store_name,
+                            'name' => $product->user && $product->user->vendor ? $product->user->vendor->store_name : 'Không có cửa hàng',
                         ],
                     ];
                 }

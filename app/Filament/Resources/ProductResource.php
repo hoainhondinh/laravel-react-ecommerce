@@ -184,7 +184,6 @@ class ProductResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Filament::auth()->user();
-        return $user && $user->hasRole(RolesEnum::Vendor);
+        return $user && $user->hasAnyRole([RolesEnum::Admin, RolesEnum::Vendor]);
     }
-
 }

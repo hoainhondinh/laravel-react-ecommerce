@@ -148,17 +148,20 @@ class ProductVariations extends EditRecord
 
         //Loop through each variation to restructure it
         foreach ($data['variations'] as $option) {
-            $variationTypeOptionIds =[];
-            foreach ($this->record->variationTypes as $i => $variationType){
+            $variationTypeOptionIds = [];
+            foreach ($this->record->variationTypes as $i => $variationType) {
                 $variationTypeOptionIds[] = $option['variation_type_' . ($variationType->id)]['id'];
             }
 
             $quantity = $option['quantity'];
             $price = $option['price'];
 
-        //Prepare the data structure for the data
+            // Đảm bảo id được lưu trữ nếu có
+            $id = $option['id'] ?? null;
+
+            //Prepare the data structure for the data
             $formattedData[] = [
-                'id' => $option['id'],
+                'id' => $id,
                 'variation_type_option_ids' => $variationTypeOptionIds,
                 'quantity' => $quantity,
                 'price' => $price,
