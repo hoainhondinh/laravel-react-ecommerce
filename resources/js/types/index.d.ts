@@ -28,12 +28,18 @@ export type VariationType = {
   options: VariationTypeOption[];
 }
 
+// Cập nhật interface Product
 export type Product = {
   id: number;
   title: string;
   slug: string;
   price: number;
+  original_price?: number; // Giá gốc (trước khi giảm)
+  discount_percent?: number; // Phần trăm giảm giá
+  is_on_sale?: boolean; // Đang giảm giá hay không
+  has_variations?: boolean; // Có biến thể hay không
   quantity: number;
+  sold_count?: number; // Số lượng đã bán
   image: string;
   images: Image[];
   short_description: string;
@@ -52,15 +58,23 @@ export type Product = {
     variation_type_option_ids: number[];
     quantity: number;
     price: number;
+    original_price?: number; // Giá gốc biến thể
+    discount_percent?: number; // Phần trăm giảm giá biến thể
+    is_on_sale?: boolean; // Biến thể đang giảm giá hay không
+    sold_count?: number; // Số lượng đã bán của biến thể
   }>
 }
 
+// Cập nhật CartItem để hỗ trợ giá gốc
 export type CartItem = {
   id: number;
   product_id: number;
   title: string;
   slug: string;
   price: number;
+  original_price?: number; // Giá gốc
+  discount_percent?: number; // Phần trăm giảm giá
+  is_on_sale?: boolean; // Đang giảm giá hay không
   quantity: number;
   image: string;
   option_ids: Record<string, number>;

@@ -5,7 +5,8 @@ import Carousel from "@/Components/Core/Carousel";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {arraysAreEqual} from "@/helper";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-
+import toast from "react-hot-toast";
+import SoldProgressBar from "@/Components/App/SoldProgressBar";
 function Show({product, variationOptions}: {
   product: Product, variationOptions: number[]
 }) {
@@ -36,39 +37,90 @@ function Show({product, variationOptions}: {
     return product.images;
   }, [product, selectedOptions]);
 
+  // const computedProduct = useMemo(() => {
+  //   const selectedOptionIds = Object.values(selectedOptions)
+  //     .map(op => op.id)
+  //   .sort();
+  //
+  //   for (let variation of product.variations) {
+  //     const optionIds = variation.variation_type_option_ids.sort();
+  //     if (arraysAreEqual(selectedOptionIds, optionIds)) {
+  //       return {
+  //         price: variation.price,
+  //         quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
+  //       }
+  //     }
+  //   }
+  //   return {
+  //     price: product.price,
+  //     quantity: product.quantity
+  //   };
+  // }, [product, selectedOptions]);
+// Trong computedProduct, thêm trường để tính giá khuyến mãi
   const computedProduct = useMemo(() => {
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
-    .sort();
+      .sort();
 
     for (let variation of product.variations) {
       const optionIds = variation.variation_type_option_ids.sort();
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         return {
           price: variation.price,
+          original_price: variation.original_price,
+          is_on_sale: variation.is_on_sale,
+          discount_percent: variation.discount_percent,
           quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
+          sold_count: variation.sold_count || 0, // Thêm trường này
         }
       }
     }
     return {
       price: product.price,
-      quantity: product.quantity
+      original_price: product.original_price,
+      is_on_sale: product.is_on_sale,
+      discount_percent: product.discount_percent,
+      quantity: product.quantity,
+      sold_count: product.sold_count || 0,
     };
   }, [product, selectedOptions]);
-
   // Khởi tạo các tùy chọn mặc định
 
+  // useEffect(() => {
+  //   const initialOptions = {};
+  //
+  //   product.variationTypes.forEach((type, index) => {
+  //     // Tìm option ID theo index của mảng
+  //     // Chuyển đổi selectedOptionId từ string sang number
+  //     const selectedOptionId = Number(variationOptions[type.id]);
+  //     // Tìm option tương ứng
+  //     const matchedOption = type.options.find(
+  //       op => op.id === selectedOptionId
+  //     );
+  //
+  //     if (matchedOption) {
+  //       initialOptions[type.id] = matchedOption;
+  //     }
+  //   });
+  //
+  //   setSelectedOptions(initialOptions);
+  // }, []);
   useEffect(() => {
     const initialOptions = {};
 
-    product.variationTypes.forEach((type, index) => {
-      // Tìm option ID theo index của mảng
-      // Chuyển đổi selectedOptionId từ string sang number
+    product.variationTypes.forEach((type) => {
+      // Nếu có variation options từ URL, sử dụng chúng
       const selectedOptionId = Number(variationOptions[type.id]);
-      // Tìm option tương ứng
-      const matchedOption = type.options.find(
-        op => op.id === selectedOptionId
-      );
+      let matchedOption;
+
+      if (selectedOptionId) {
+        matchedOption = type.options.find(op => op.id === selectedOptionId);
+      }
+
+      // Nếu không tìm thấy option từ URL, sử dụng option đầu tiên
+      if (!matchedOption && type.options.length > 0) {
+        matchedOption = type.options[0];
+      }
 
       if (matchedOption) {
         initialOptions[type.id] = matchedOption;
@@ -77,7 +129,6 @@ function Show({product, variationOptions}: {
 
     setSelectedOptions(initialOptions);
   }, []);
-
   // Chuyển đổi tùy chọn thành dạng map
   const getOptionIdsMap = (newOptions:object) => {
     return Object.fromEntries(
@@ -115,17 +166,55 @@ function Show({product, variationOptions}: {
   }
 
   // Xử lý thêm vào giỏ hàng
+  // const addToCart = () => {
+  //   form.post(route('cart.store', product.id), {
+  //     preserveScroll: true,
+  //     preserveState: true,
+  //     onError: (err) => {
+  //       console.log(err)
+  //     }
+  //     // onSuccess: () => router.get(route('cart.index')),
+  //   })
+  // }
   const addToCart = () => {
+    // Kiểm tra xem đã chọn đủ biến thể chưa
+    const requiredVariationTypes = product.variationTypes;
+    const selectedVariationCount = Object.keys(selectedOptions).length;
+
+    if (selectedVariationCount < requiredVariationTypes.length) {
+      // Tìm các biến thể chưa được chọn
+      const unselectedTypes = requiredVariationTypes.filter(type =>
+        !Object.keys(selectedOptions).includes(type.id.toString())
+      );
+
+      // Hiển thị thông báo lỗi
+      const typeNames = unselectedTypes.map(type => type.name).join(', ');
+      toast.error(`Vui lòng chọn ${typeNames} trước khi thêm vào giỏ hàng`);
+
+      // Highlight các biến thể chưa chọn bằng cách thêm class
+      unselectedTypes.forEach(type => {
+        const element = document.getElementById(`variation-type-${type.id}`);
+        if (element) {
+          element.classList.add('highlight-required');
+        }
+      });
+
+      return;
+    }
+
+    // Nếu đã chọn đủ biến thể, tiến hành thêm vào giỏ hàng
     form.post(route('cart.store', product.id), {
       preserveScroll: true,
       preserveState: true,
+      onSuccess: () => {
+        toast.success('Đã thêm sản phẩm vào giỏ hàng');
+      },
       onError: (err) => {
-        console.log(err)
+        console.log(err);
+        toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng');
       }
-      // onSuccess: () => router.get(route('cart.index')),
-    })
+    });
   }
-
   // Render các loại biến thể sản phẩm
   const renderProductVariationTypes = () => {
     return (
@@ -201,8 +290,40 @@ function Show({product, variationOptions}: {
               <h1 className="text-2xl mb-8">{product.title}</h1>
 
               <div>
-                <div className="text-3xl font-semibold">
-                  <CurrencyFormatter amount={computedProduct.price}/>
+                {/*<div className="text-3xl font-semibold">*/}
+                {/*  <CurrencyFormatter amount={computedProduct.price}/>*/}
+                {/*</div>*/}
+                <div>
+                  {computedProduct.is_on_sale ? (
+                    <div className="mb-4">
+                      <div className="text-xl text-gray-500 line-through">
+                        <CurrencyFormatter amount={computedProduct.original_price}/>
+                      </div>
+                      <div className="flex items-center">
+                      <span className="text-3xl font-semibold text-red-600 mr-3">
+                        <CurrencyFormatter amount={computedProduct.price}/>
+                      </span>
+                      <span className="bg-red-500 text-white px-2 py-1 rounded-md text-sm">
+                        -{computedProduct.discount_percent}%
+                      </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-3xl font-semibold mb-4">
+                      <CurrencyFormatter amount={computedProduct.price}/>
+                    </div>
+                  )}
+
+                  {computedProduct.sold_count > 0 && (
+                    <div className="text-sm text-gray-500 mb-4">
+                      Đã bán: {computedProduct.sold_count}
+                    </div>
+                  )}
+                  <SoldProgressBar
+                    soldCount={computedProduct.sold_count || 0}
+                    quantity={computedProduct.quantity}
+                    className="my-4"
+                  />
                 </div>
               </div>
 
@@ -218,7 +339,7 @@ function Show({product, variationOptions}: {
 
               <b className="text-xl">About the Item</b>
               <div className="wysiwyg-output"
-              dangerouslySetInnerHTML={{__html: product.description}}/>
+                   dangerouslySetInnerHTML={{__html: product.description}}/>
             </div>
           </div>
         </div>
