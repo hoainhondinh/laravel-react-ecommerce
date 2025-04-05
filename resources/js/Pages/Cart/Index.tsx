@@ -1,6 +1,6 @@
 import {GroupedCartItems, PageProps} from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {Head, Link} from "@inertiajs/react";
+import {Head, Link, router} from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import PrimaryButton from "@/Components/Core/PrimaryButton";
 import {CreditCardIcon} from "@heroicons/react/24/outline";
@@ -13,6 +13,16 @@ function Index(
     totalQuantity,
     totalPrice
   }: PageProps<{cartItems: Record<number, GroupedCartItems>}>) {
+
+  // Hàm chuyển hướng trực tiếp sang checkout
+  const proceedToCheckout = (vendorId: number | null = null) => {
+    // Nếu có vendorId, lưu vào query params
+    if (vendorId) {
+      router.get(route('checkout.index', { vendor_id: vendorId }));
+    } else {
+      router.get(route('checkout.index'));
+    }
+  };
 
   return (
     <AuthenticatedLayout>
@@ -30,27 +40,27 @@ function Index(
                 </div>
               )}
               {Object.values(cartItems).map(cartItem => (
-                  <div key={cartItem.user.id}>
-                    <div className="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
-                      <Link href="/public" className={"underline"}>
-                        {cartItem.user.name}
-                      </Link>
-                      <div>
-                        <form action={route('cart.checkout')} method="post">
-                          <input type="hidden" name="_token" value={csrf_token}/>
-                          <input type="hidden" name="vendor_id" value={cartItem.user.id}/>
-                          <button className="btn btn-sm btn-ghost">
-                            <CreditCardIcon className={"size-6"}/>
-                              Pay Only for this seller
-                          </button>
-                        </form>
-                      </div>
+                <div key={cartItem.user.id}>
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
+                    <Link href="/public" className={"underline"}>
+                      {cartItem.user.name}
+                    </Link>
+                    <div>
+                      {/* Thay thế form bằng button */}
+                      <button
+                        onClick={() => proceedToCheckout(cartItem.user.id)}
+                        className="btn btn-sm btn-ghost"
+                      >
+                        <CreditCardIcon className={"size-6"}/>
+                        Pay Only for this seller
+                      </button>
                     </div>
-                    {cartItem.items.map(item => (
-                      <CartItem item={item} key={item.id}/>
-                    ))}
                   </div>
-                ))}
+                  {cartItem.items.map(item => (
+                    <CartItem item={item} key={item.id}/>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -58,18 +68,21 @@ function Index(
           <div className="card-body">
             Subtotal ({totalQuantity} items): &nbsp;
             <CurrencyFormatter amount={totalPrice}/>
-            <form action={route('cart.checkout')} method="post">
-              <input type="hidden" name="_token" value={csrf_token}/>
-              <PrimaryButton className="rounded-full">
-                <CreditCardIcon className={"size-6"}/>
-                Proceed to Checkout
-              </PrimaryButton>
-            </form>
+
+            {/* Thay thế form bằng button */}
+            <PrimaryButton
+              className="rounded-full"
+              onClick={() => proceedToCheckout()}
+              disabled={Object.keys(cartItems).length === 0}
+            >
+              <CreditCardIcon className={"size-6"}/>
+              Proceed to Checkout
+            </PrimaryButton>
           </div>
         </div>
-        </div>
+      </div>
     </AuthenticatedLayout>
-);
+  );
 }
 
 export default Index;

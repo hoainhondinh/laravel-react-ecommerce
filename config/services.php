@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
+    'vietqr' => [
+        'bank_id' => env('VIETQR_BANK_ID', '970436'), // Vietcombank
+        'account_no' => env('VIETQR_ACCOUNT_NO', '9704366812230043014'),
+        'account_name' => env('VIETQR_ACCOUNT_NAME', 'DINHTRANHOAINHON'),
+        'template' => env('VIETQR_TEMPLATE', 'compact'),
+    ],
 ];

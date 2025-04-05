@@ -13,7 +13,10 @@ return [
     | This will allow your users to receive real-time notifications.
     |
     */
-
+    'widgets' => [
+        App\Filament\Widgets\StatsOverview::class,
+        App\Filament\Widgets\RevenueChart::class,
+    ],
     'broadcasting' => [
 
         // 'echo' => [

@@ -53,7 +53,19 @@ class CartService
             $this->removeItemFromCookies($productId, $optionIds);
         }
     }
+    public function clearCart(): void
+    {
+        if (Auth::check()) {
+            // Xóa giỏ hàng từ cơ sở dữ liệu
+            CartItem::where('user_id', Auth::id())->delete();
+        } else {
+            // Xóa giỏ hàng từ cookie
+            Cookie::queue(self::COOKIE_NAME, '', -1);
+        }
 
+        // Xóa cache
+        $this->cachedCartItems = null;
+    }
     public function getCartItems(): array
     {
         //We need to put this in try-catch, otherwise if something goes wrong

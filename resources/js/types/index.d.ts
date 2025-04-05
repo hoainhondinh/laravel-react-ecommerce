@@ -87,7 +87,18 @@ export type GroupedCartItems = {
   totalPrice: number;
   totalQuantity: number;
 }
-
+interface OrderItem {
+  id: number;
+  product_id: number;
+  quantity: number;
+  price: number;
+  product: {
+    title: string;
+    slug: string;
+    image: string;
+  };
+  options: string | any[]; // Could be a JSON string or an array
+}
 export interface Author {
   id: number;
   name: string;

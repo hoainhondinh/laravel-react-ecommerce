@@ -41,7 +41,10 @@ class Product extends Model implements HasMedia
         $this->addMediaConversion('large')
             ->width(1200);
     }
-
+    public function getImageAttribute()
+    {
+        return $this->getFirstMediaUrl('images', 'small');
+    }
     // Scopes...
     public function scopeForVendor(Builder $query):Builder
     {

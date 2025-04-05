@@ -146,6 +146,12 @@ const Navbar: React.FC<NavbarProps> = () => {
                       Profile
                     </Link>
                     <Link
+                      href={route('orders.index')}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Đơn hàng của tôi
+                    </Link>
+                    <Link
                       href={route('logout')}
                       method="post"
                       as="button"
