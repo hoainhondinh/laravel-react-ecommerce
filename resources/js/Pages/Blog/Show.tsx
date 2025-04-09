@@ -6,6 +6,15 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { formatDate, createExcerpt } from '@/utils/helpers';
 
 const Show: React.FC<BlogShowProps> = ({ post, relatedPosts }) => {
+  const formatDateVN = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).replace(/\//g, '/');
+  };
+
   // Create structured data for the blog post
   const structuredData = {
     "@context": "https://schema.org",
@@ -75,38 +84,23 @@ const Show: React.FC<BlogShowProps> = ({ post, relatedPosts }) => {
       </Head>
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-        {post.category && (
-          <Link
-            href={`/blog/category/${post.category.slug}`}
-            className="text-blue-600 font-medium hover:underline"
-          >
-            {post.category.name}
-          </Link>
-        )}
-
-        <h1 className="text-4xl font-bold mt-2 mb-4">{post.title}</h1>
-
-        <div className="flex flex-wrap items-center text-gray-600 mb-8">
-          <span>By {post.author?.name || 'Admin'}</span>
-          <span className="mx-2">•</span>
-          <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
-
-          {post.tags && post.tags.length > 0 && (
-            <>
-              <span className="mx-2">•</span>
-              <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
-                {post.tags.map(tag => (
-                  <Link
-                    key={tag.id}
-                    href={`/blog/tag/${tag.slug}`}
-                    className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300"
-                  >
-                    {tag.name}
-                  </Link>
-                ))}
-              </div>
-            </>
+        <div className="mb-6">
+          {post.category && (
+            <Link
+              href={`/blog/category/${post.category.slug}`}
+              className="text-primary font-medium hover:underline"
+            >
+              {post.category.name}
+            </Link>
           )}
+        </div>
+
+        <h1 className="text-3xl md:text-4xl font-bold text-neutral mb-4">{post.title}</h1>
+
+        <div className="flex items-center text-charcoal mb-8 text-sm">
+          <time dateTime={post.published_at}>{formatDateVN(post.published_at)}</time>
+          <span className="mx-2">•</span>
+          <span>{post.author?.name || 'Admin'}</span>
         </div>
 
         {post.featured_image && (
@@ -120,35 +114,51 @@ const Show: React.FC<BlogShowProps> = ({ post, relatedPosts }) => {
         )}
 
         <div
-          className="prose lg:prose-xl max-w-none"
+          className="prose max-w-none prose-headings:text-neutral prose-a:text-primary prose-strong:text-neutral prose-img:rounded-lg"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
         />
+
+        {post.tags && post.tags.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="flex flex-wrap gap-2">
+              {post.tags.map(tag => (
+                <Link
+                  key={tag.id}
+                  href={`/blog/tag/${tag.slug}`}
+                  className="px-3 py-1 bg-accent text-charcoal text-sm rounded-full hover:bg-base-300 transition"
+                >
+                  #{tag.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
+            <h2 className="text-2xl font-bold mb-6 text-neutral">Bài viết liên quan</h2>
             <div className="grid md:grid-cols-3 gap-6">
               {relatedPosts.map(relatedPost => (
-                <div key={relatedPost.id} className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div key={relatedPost.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
                   {relatedPost.featured_image && (
-                    <Link href={`/blog/${relatedPost.slug}`}>
+                    <Link href={`/blog/${relatedPost.slug}`} className="block relative h-40 overflow-hidden">
                       <img
                         src={relatedPost.featured_image}
                         alt={relatedPost.title}
-                        className="w-full h-48 object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     </Link>
                   )}
                   <div className="p-4">
                     <Link
                       href={`/blog/${relatedPost.slug}`}
-                      className="text-xl font-semibold hover:text-blue-600"
+                      className="text-lg font-semibold text-neutral hover:text-primary"
                     >
                       {relatedPost.title}
                     </Link>
-                    <p className="text-gray-600 mt-2 line-clamp-2">
-                      {relatedPost.excerpt || createExcerpt(relatedPost.content, 100)}
+                    <p className="text-sm text-charcoal mt-2">
+                      {formatDateVN(relatedPost.published_at)}
                     </p>
                   </div>
                 </div>

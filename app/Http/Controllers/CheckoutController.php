@@ -31,48 +31,75 @@ class CheckoutController extends Controller
 
     public function store(Request $request, CartService $cartService)
     {
-        // Validate thông tin
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string|max:500',
-            'payment_method' => 'required|string|in:cod,bank_transfer',
-        ]);
-
-        // Tạo đơn hàng
-        $order = Order::create([
-            'user_id' => auth()->id(),
-            'total_price' => $cartService->getTotalPrice(),
-            'status' => 'pending',
-            'payment_status' => ($validated['payment_method'] === 'cod') ? 'pending' : 'awaiting',
-            'payment_method' => $validated['payment_method'],
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'address' => $validated['address'],
-        ]);
-
-        // Thêm các sản phẩm từ giỏ hàng vào đơn hàng
-        $cartItems = $cartService->getCartItems();
-        foreach ($cartItems as $item) {
-            $order->items()->create([
-                'product_id' => $item['product_id'],
-                'variation_id' => $item['variation_id'] ?? null,
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'options' => json_encode($item['options'] ?? []),
-            ]);
+        // Kiểm tra lại giỏ hàng trước khi xử lý đơn hàng
+        if ($cartService->getTotalQuantity() === 0) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Giỏ hàng của bạn đang trống');
         }
-        // Gửi email xác nhận đơn hàng
-        $order->user->notify(new NewOrderNotification($order));
 
+        // Validate thông tin với quy tắc chi tiết hơn
+        $validated = $request->validate([
+            'name' => 'required|string|min:2|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20',
+            'address' => 'required|string|min:10|max:500',
+            'payment_method' => 'required|string|in:cod,bank_transfer',
+        ], [
+            'name.required' => 'Vui lòng nhập họ tên của bạn.',
+            'name.min' => 'Họ tên phải có ít nhất :min ký tự.',
+            'email.required' => 'Vui lòng nhập địa chỉ email.',
+            'email.email' => 'Địa chỉ email không hợp lệ.',
+            'phone.required' => 'Vui lòng nhập số điện thoại.',
+            'phone.regex' => 'Số điện thoại chỉ được chứa chữ số và các ký tự +()-.',
+            'phone.min' => 'Số điện thoại phải có ít nhất :min ký tự.',
+            'address.required' => 'Vui lòng nhập địa chỉ giao hàng.',
+            'address.min' => 'Địa chỉ giao hàng phải có ít nhất :min ký tự.',
+            'payment_method.required' => 'Vui lòng chọn phương thức thanh toán.',
+            'payment_method.in' => 'Phương thức thanh toán không hợp lệ.',
+        ]);
 
-        // Xóa giỏ hàng
-        $cartService->clearCart();
+        try {
+            // Tạo đơn hàng
+            $order = Order::create([
+                'user_id' => auth()->id(),
+                'total_price' => $cartService->getTotalPrice(),
+                'status' => 'pending',
+                'payment_status' => ($validated['payment_method'] === 'cod') ? 'pending' : 'awaiting',
+                'payment_method' => $validated['payment_method'],
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'address' => $validated['address'],
+            ]);
 
-        // Chuyển đến trang xác nhận đơn hàng
-        return redirect()->route('checkout.confirmation', $order->id);
+            // Thêm các sản phẩm từ giỏ hàng vào đơn hàng
+            $cartItems = $cartService->getCartItems();
+            foreach ($cartItems as $item) {
+                $order->items()->create([
+                    'product_id' => $item['product_id'],
+                    'variation_id' => $item['variation_id'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'options' => json_encode($item['options'] ?? []),
+                ]);
+            }
+
+            // Gửi email xác nhận đơn hàng
+            $order->user->notify(new NewOrderNotification($order));
+
+            // Xóa giỏ hàng
+            $cartService->clearCart();
+
+            // Chuyển đến trang xác nhận đơn hàng
+            return redirect()->route('checkout.confirmation', $order->id);
+
+        } catch (\Exception $e) {
+            // Log lỗi nếu có
+            \Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage());
+
+            // Trả về thông báo lỗi
+            return back()->withInput()->with('error', 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại sau.');
+        }
     }
 
     public function confirmation(Order $order, VietQRService $vietQRService)

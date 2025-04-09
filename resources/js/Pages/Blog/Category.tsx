@@ -1,4 +1,3 @@
-// resources/js/Pages/Blog/Category.tsx
 import React from 'react';
 import { Head } from '@inertiajs/react';
 import { PageProps } from '@/types';
@@ -18,13 +17,14 @@ interface BlogCategoryProps {
 export default function BlogCategory({ category, posts }: PageProps<BlogCategoryProps>) {
   return (
     <AuthenticatedLayout>
-      <Head title={`${category.name} - Blog`} />
+      <Head title={`${category.name} - Tin Tức`} />
       <main className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
-            <h1 className="text-3xl font-bold">{category.name}</h1>
+          <div className="mb-10 text-center">
+            <h1 className="text-3xl font-bold text-neutral">{category.name}</h1>
+            <div className="w-24 h-1 bg-primary mt-4 mx-auto"></div>
             {category.description && (
-              <p className="text-lg text-gray-600 mt-2">{category.description}</p>
+              <p className="text-lg text-charcoal mt-4">{category.description}</p>
             )}
           </div>
 
@@ -35,7 +35,7 @@ export default function BlogCategory({ category, posts }: PageProps<BlogCategory
               ))}
             </div>
           ) : (
-            <p className="text-center py-16 text-gray-500">Không có bài viết nào trong danh mục này.</p>
+            <p className="text-center py-16 text-charcoal">Không có bài viết nào trong danh mục này.</p>
           )}
 
           {posts.meta && posts.meta.last_page > 1 && (

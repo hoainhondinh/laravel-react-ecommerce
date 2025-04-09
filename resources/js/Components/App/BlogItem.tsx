@@ -10,41 +10,42 @@ export default function BlogItem({ post }: Props) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
-      day: 'numeric',
-      month: 'long',
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric',
-    });
+    }).replace(/\//g, '/');
   };
 
   return (
-    <div className="card bg-base-100 shadow-xl h-full">
+    <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-duration-300">
       {post.featured_image && post.featured_image.length > 0 && (
-        <Link href={`/blog/${post.slug}`}>
+        <Link href={`/blog/${post.slug}`} className="block relative h-48 overflow-hidden">
           <img
             src={post.featured_image}
             alt={post.title}
-            className="h-48 w-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
         </Link>
       )}
-      <div className="card-body">
-        {post.category && (
-          <Link
-            href={`/blog/category/${post.category.slug}`}
-            className="text-primary text-sm font-medium hover:underline"
-          >
-            {post.category.name}
-          </Link>
-        )}
+      <div className="p-5">
         <Link href={`/blog/${post.slug}`}>
-          <h2 className="card-title hover:text-primary transition-colors">{post.title}</h2>
+          <h2 className="text-xl font-bold text-neutral hover:text-primary transition-colors">
+            {post.title}
+          </h2>
         </Link>
+
         {post.excerpt && (
-          <p className="text-gray-600 line-clamp-2">{post.excerpt}</p>
+          <p className="text-charcoal mt-3 line-clamp-3">{post.excerpt}</p>
         )}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-auto">
-          <span>{post.author?.name || 'Admin'}</span>
-          <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
+
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm text-charcoal">{formatDate(post.published_at)}</span>
+          <Link
+            href={`/blog/${post.slug}`}
+            className="text-primary hover:text-primary-dark transition-colors font-medium"
+          >
+            Đọc thêm
+          </Link>
         </div>
       </div>
     </div>

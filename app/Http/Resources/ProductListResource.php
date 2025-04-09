@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 class ProductListResource extends JsonResource
 {
+    public static $wrap = false;
     public function toArray(Request $request): array
     {
         $hasVariations = $this->variations->count() > 0;
@@ -39,6 +40,7 @@ class ProductListResource extends JsonResource
             'department' => [
                 'id' => $this->department->id,
                 'name' => $this->department->name,
+                'slug' => $this->department->slug,
             ]
         ];
     }

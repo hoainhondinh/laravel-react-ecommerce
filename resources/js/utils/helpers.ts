@@ -1,4 +1,4 @@
-// resources/js/utils/helpers.ts
+
 /**
  * Format a date string
  * @param dateString - Date string to format

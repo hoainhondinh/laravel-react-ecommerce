@@ -78,3 +78,33 @@
         box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
     }
 }
+@layer components {
+    /* Theme colors - use custom properties for easy updates */
+    :root {
+        --color-dark-brown: #4E3629;
+        --color-mocha: #9E7A47;
+        --color-beige: #D8C8A4;
+        --color-light-gold: #D9C97E;
+        --color-soft-green: #A7C5A4;
+        --color-amber-gold: #FFBF49;
+        --color-charcoal: #333333;
+    }
+
+    /* Common brand components */
+    .btn-brand-primary {
+        @apply bg-[#9E7A47] text-white hover:bg-[#4E3629] transition-colors;
+    }
+
+    .btn-brand-secondary {
+        @apply bg-[#A7C5A4] text-white hover:bg-[#A7C5A4]/80 transition-colors;
+    }
+
+    .section-heading {
+        @apply relative inline-block font-bold pb-2;
+    }
+
+    .section-heading::after {
+        content: '';
+        @apply absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-[#D9C97E];
+    }
+}

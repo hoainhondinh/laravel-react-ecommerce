@@ -1,4 +1,3 @@
-// resources/js/Pages/Blog/Tag.tsx
 import React from 'react';
 import { Head } from '@inertiajs/react';
 import { PageProps } from '@/types';
@@ -22,7 +21,7 @@ export default function BlogTag({ tag, posts }: PageProps<BlogTagProps>) {
       <main className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-10">
-            <h1 className="text-3xl font-bold">Bài viết với tag: {tag.name}</h1>
+            <h1 className="text-3xl font-bold text-primary">Bài viết với tag: {tag.name}</h1>
           </div>
 
           {posts.data.length > 0 ? (
@@ -32,7 +31,7 @@ export default function BlogTag({ tag, posts }: PageProps<BlogTagProps>) {
               ))}
             </div>
           ) : (
-            <p className="text-center py-16 text-gray-500">Không có bài viết nào với tag này.</p>
+            <p className="text-center py-16 text-charcoal">Không có bài viết nào với tag này.</p>
           )}
 
           {posts.meta && posts.meta.last_page > 1 && (

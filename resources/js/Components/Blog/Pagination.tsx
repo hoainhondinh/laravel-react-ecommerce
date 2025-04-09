@@ -8,47 +8,48 @@ interface PaginationProps {
 }
 
 const Pagination: React.FC<PaginationProps> = ({ meta, baseUrl }) => {
-  // Kiểm tra meta tồn tại trước khi destructure
+  // Check if meta exists before destructuring
   if (!meta || !meta.links) {
-    return null; // Không hiển thị pagination nếu không có dữ liệu
+    return null; // Don't display pagination if there's no data
   }
 
   const { links, current_page, last_page } = meta;
 
-  // Không hiển thị phân trang nếu chỉ có 1 trang
+  // Don't display pagination if there's only 1 page
   if (last_page <= 1) return null;
 
   return (
-    <div className="flex justify-center my-8">
+    <div className="flex justify-center mt-12">
       <nav className="flex items-center space-x-1">
         {links.map((link, i) => {
-          // Skip if it's a current page "link"
+          // For active/current page
           if (link.active) {
             return (
               <span
                 key={i}
-                className="px-3 py-1 rounded-md bg-blue-600 text-white"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white font-medium"
                 dangerouslySetInnerHTML={{ __html: link.label }}
               />
             );
           }
 
-          // Skip if url is null
+          // For disabled links (no URL)
           if (!link.url) {
             return (
               <span
                 key={i}
-                className="px-3 py-1 text-gray-400 cursor-not-allowed"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 cursor-not-allowed"
                 dangerouslySetInnerHTML={{ __html: link.label }}
               />
             );
           }
 
+          // For regular links
           return (
             <Link
               key={i}
               href={link.url}
-              className="px-3 py-1 rounded-md text-gray-700 hover:bg-gray-200"
+              className="w-10 h-10 flex items-center justify-center rounded-full text-charcoal hover:bg-base-200 transition-colors"
               dangerouslySetInnerHTML={{ __html: link.label }}
             />
           );

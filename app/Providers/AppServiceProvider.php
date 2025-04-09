@@ -2,7 +2,12 @@
 
 namespace App\Providers;
 
+
+use App\Http\Resources\BlogCategoryResource;
+use App\Http\Resources\DepartmentResource;
+use App\Models\Department;
 use App\Services\CartService;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use App\Models\BlogCategory;
@@ -25,12 +30,23 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
         Inertia::share([
             'blogCategories' => function () {
-                return BlogCategory::select('id', 'name', 'slug')
-                    ->withCount('posts')
-                    ->orderBy('name')
-                    ->get();
+                return BlogCategoryResource::collection(
+                    BlogCategory::select('id', 'name', 'slug')
+                        ->withCount('posts')
+                        ->orderBy('name')
+                        ->get()
+                );
+            },
+            'departments' => function () {
+                return DepartmentResource::collection(
+                    Department::published()
+                        ->withCount('products')
+                        ->orderBy('name', 'asc')
+                        ->get()
+                );
             },
         ]);
     }

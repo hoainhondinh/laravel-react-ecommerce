@@ -1,38 +1,30 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { PageProps, PaginationProps, Product } from '@/types';
+import { PageProps, PaginationProps, Product, Department } from '@/types';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ProductItem from '@/Components/App/ProductItem';
 
+interface DepartmentIndexProps {
+  products: PaginationProps<Product>;
+  currentDepartment?: Department;
+}
+
 export default function Index({
                                 products,
-                                filters = {}
-                              }: PageProps<{
-  products: PaginationProps<Product>;
-  filters?: { department?: string };
-}>) {
-  // Đúng: Gọi usePage() trong phần thân của function component
-  const page = usePage<PageProps>();
-  const { departments = [] } = page.props;
-
-  // Đúng: Sử dụng useEffect ở đây
-  useEffect(() => {
-    console.log('Page Props:', page.props);
-    console.log('Departments:', departments);
-  }, [page.props, departments]);
-
-  // Determine current department if filter is applied
-  const currentDepartmentSlug = filters.department;
-  const currentDepartment = departments.find(d => d.slug === currentDepartmentSlug);
-
-  const pageTitle = currentDepartment ? currentDepartment.name : 'Tất cả sản phẩm';
+                                currentDepartment
+                              }: PageProps<DepartmentIndexProps>) {
+  // Get departments from shared props
+  const { departments = [] } = usePage<PageProps>().props;
+  const departmentsList = departments || [];
+  const productsList = products?.data || [];
   return (
     <AuthenticatedLayout>
-      <Head title={pageTitle} />
+      <Head title={currentDepartment ? currentDepartment.name : 'Danh mục sản phẩm'} />
       <div className="py-12 bg-white">
         <div className="container mx-auto px-4">
+          {/* Department Title */}
           <h1 className="text-3xl font-bold text-[#4E3629] mb-8 text-center relative inline-block pb-2 mx-auto w-full">
-            {pageTitle}
+            {currentDepartment ? currentDepartment.name : 'Danh mục sản phẩm'}
             <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-[#D9C97E]"></div>
           </h1>
 
@@ -44,34 +36,28 @@ export default function Index({
                   Danh mục sản phẩm
                 </h3>
                 <ul className="space-y-2">
-                  <li key="all-products">
+                  <li>
                     <Link
                       href={route('products.index')}
-                      className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
-                        !currentDepartmentSlug ? 'text-[#9E7A47] font-medium' : ''
-                      }`}
-                      preserveScroll
+                      className="block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors"
                     >
                       Tất cả sản phẩm
                     </Link>
                   </li>
-                  {departments.map((department, index) => (
-                    department && department.id ? (
-                      <li key={`dept-${department.id}`}>
-                        <Link
-                          href={route('department.show', { department: department.slug })}
-                          className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
-                            currentDepartmentSlug === department.slug ? 'text-[#9E7A47] font-medium' : ''
-                          }`}
-                          preserveScroll
-                        >
-                          {department.name}
-                          <span className="text-gray-500 text-sm ml-1">
-                            ({department.products_count || 0})
-                          </span>
-                        </Link>
-                      </li>
-                    ) : null
+                  {departments.map(department => (
+                    <li key={department.id}>
+                      <Link
+                        href={route('department.show', { department: department.slug })}
+                        className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
+                          currentDepartment?.id === department.id ? 'text-[#9E7A47] font-medium' : ''
+                        }`}
+                      >
+                        {department.name}
+                        <span className="text-gray-500 text-sm ml-1">
+                          ({department.products_count || 0})
+                        </span>
+                      </Link>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -79,12 +65,12 @@ export default function Index({
 
             {/* Product grid */}
             <div className="lg:col-span-3">
-              {products.data && products.data.length > 0 ? (
+              {products.data.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {products.data.map(product => (
                       <div
-                        key={`product-${product.id}`}
+                        key={product.id}
                         className="bg-white border border-[#D8C8A4] shadow-sm hover:shadow-md transition-shadow duration-300 rounded-md overflow-hidden"
                       >
                         <div className="rounded-t-md overflow-hidden">
@@ -121,7 +107,7 @@ export default function Index({
                   )}
                 </>
               ) : (
-                <div key="no-products" className="text-center py-12">
+                <div className="text-center py-12">
                   <div className="text-[#4E3629] mb-4">Không tìm thấy sản phẩm nào</div>
                   <Link
                     href={route('products.index')}

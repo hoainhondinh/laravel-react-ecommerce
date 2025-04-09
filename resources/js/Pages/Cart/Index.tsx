@@ -26,58 +26,68 @@ function Index(
 
   return (
     <AuthenticatedLayout>
-      <Head title="Your Cart"></Head>
-      <div className="container mx-auto p-8 flex flex-col lg:flex-row gap-4">
-        <div className="card flex-1 bg-white dark:bg-gray-800 order-2 lg:order-1">
-          <div className="card-body">
-            <h2 className="text-lg font-bold">
-              Shopping Cart
-            </h2>
-            <div className="my-4">
-              {Object.keys(cartItems).length === 0 &&(
-                <div className="py-2 text-gray-500 text-center">
-                  You don't have any items yet.
-                </div>
-              )}
-              {Object.values(cartItems).map(cartItem => (
-                <div key={cartItem.user.id}>
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-300 mb-4">
-                    <Link href="/public" className={"underline"}>
-                      {cartItem.user.name}
-                    </Link>
-                    <div>
-                      {/* Thay thế form bằng button */}
-                      <button
-                        onClick={() => proceedToCheckout(cartItem.user.id)}
-                        className="btn btn-sm btn-ghost"
-                      >
-                        <CreditCardIcon className={"size-6"}/>
-                        Pay Only for this seller
-                      </button>
-                    </div>
+      <Head title="Giỏ hàng của bạn"></Head>
+      <div className="bg-white py-8">
+        <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-6">
+          <div className="bg-white border border-[#D8C8A4] rounded-md shadow-sm flex-1 order-2 lg:order-1">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-[#4E3629] mb-6 pb-2 border-b border-[#D8C8A4]">
+                Giỏ hàng của bạn
+              </h2>
+              <div className="my-4">
+                {Object.keys(cartItems).length === 0 &&(
+                  <div className="py-8 text-gray-500 text-center">
+                    Bạn chưa có sản phẩm nào trong giỏ hàng.
                   </div>
-                  {cartItem.items.map(item => (
-                    <CartItem item={item} key={item.id}/>
-                  ))}
-                </div>
-              ))}
+                )}
+                {Object.values(cartItems).map(cartItem => (
+                  <div key={cartItem.user.id} className="mb-8">
+                    <div className="flex items-center justify-between pb-4 border-b border-[#D8C8A4] mb-4">
+                      <Link href="/public" className="text-[#9E7A47] hover:underline font-medium">
+                        {cartItem.user.name}
+                      </Link>
+                      <div>
+                        <button
+                          onClick={() => proceedToCheckout(cartItem.user.id)}
+                          className="flex items-center px-4 py-2 bg-white border border-[#9E7A47] text-[#9E7A47] rounded hover:bg-[#D8C8A4]/10 transition-colors"
+                        >
+                          <CreditCardIcon className="h-5 w-5 mr-2"/>
+                          Thanh toán riêng
+                        </button>
+                      </div>
+                    </div>
+                    {cartItem.items.map(item => (
+                      <CartItem item={item} key={item.id}/>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="card bg-white dark:bg-gray-800 lg:min-w-[260px] order-1 lg:order-2">
-          <div className="card-body">
-            Subtotal ({totalQuantity} items): &nbsp;
-            <CurrencyFormatter amount={totalPrice}/>
-
-            {/* Thay thế form bằng button */}
-            <PrimaryButton
-              className="rounded-full"
-              onClick={() => proceedToCheckout()}
-              disabled={Object.keys(cartItems).length === 0}
-            >
-              <CreditCardIcon className={"size-6"}/>
-              Proceed to Checkout
-            </PrimaryButton>
+          <div className="bg-white border border-[#D8C8A4] rounded-md shadow-sm p-6 lg:w-80 order-1 lg:order-2">
+            <div className="mb-6">
+              <div className="text-lg font-medium text-[#4E3629] mb-4">Thông tin đơn hàng</div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[#333333]">Tổng sản phẩm:</span>
+                <span className="font-medium">{totalQuantity}</span>
+              </div>
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[#333333]">Tạm tính:</span>
+                <span className="text-xl font-bold text-[#9E7A47]">
+                  <CurrencyFormatter amount={totalPrice}/>
+                </span>
+              </div>
+              <div className="border-t border-[#D8C8A4] pt-4">
+                <button
+                  onClick={() => proceedToCheckout()}
+                  disabled={Object.keys(cartItems).length === 0}
+                  className="w-full py-3 bg-[#9E7A47] text-white rounded-md hover:bg-[#4E3629] transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <CreditCardIcon className="h-5 w-5 mr-2"/>
+                  Tiến hành thanh toán
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

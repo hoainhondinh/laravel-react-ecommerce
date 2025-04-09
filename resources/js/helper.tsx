@@ -21,3 +21,22 @@ export const productRoute = (item: CartItem) => {
   // Kết hợp đường dẫn gốc sản phẩm với các tham số
   return route('product.show', item.slug) + '?' + params.toString();
 }
+/**
+ * Trích xuất mảng dữ liệu từ Resource Response
+ * Hỗ trợ cả dạng ResourceResponse<T> và mảng T[]
+ * @param resource - Dữ liệu từ Resource API hoặc mảng trực tiếp
+ * @returns Mảng dữ liệu đã trích xuất
+ */
+export function getResourceData<T>(resource: any): T[] {
+  if (!resource) return [];
+
+  if (Array.isArray(resource)) {
+    return resource;
+  }
+
+  if (resource && typeof resource === 'object' && Array.isArray(resource.data)) {
+    return resource.data;
+  }
+
+  return [];
+}

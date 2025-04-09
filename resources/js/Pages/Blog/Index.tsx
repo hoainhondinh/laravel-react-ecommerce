@@ -10,8 +10,8 @@ const Index: React.FC<BlogIndexProps> = ({ posts }) => {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Blog",
-    "headline": "Our Blog",
-    "description": "Check out our latest articles and news",
+    "headline": "Tin Tức",
+    "description": "Cập nhật tin tức, thông tin mới nhất về sản phẩm",
     "url": window.location.href,
     "publisher": {
       "@type": "Organization",
@@ -26,20 +26,23 @@ const Index: React.FC<BlogIndexProps> = ({ posts }) => {
   return (
     <AuthenticatedLayout>
       <Head>
-        <title>Blog | Your Store Name</title>
-        <meta name="description" content="Check out our latest articles and news about products, trends, and more." />
-        <meta name="keywords" content="blog, articles, news, products, trends" />
+        <title>Tin Tức | Your Store Name</title>
+        <meta name="description" content="Cập nhật tin tức, thông tin mới nhất về sản phẩm." />
+        <meta name="keywords" content="tin tức, thông tin, sản phẩm, cập nhật" />
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
       </Head>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold mb-8">Our Blog</h1>
+        <h1 className="text-4xl font-bold mb-10 text-neutral text-center">
+          TIN TỨC
+          <div className="w-24 h-1 bg-primary mt-4 mx-auto"></div>
+        </h1>
 
         {posts.data.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-xl text-gray-600">No blog posts found.</p>
+            <p className="text-xl text-charcoal">Không tìm thấy bài viết nào.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

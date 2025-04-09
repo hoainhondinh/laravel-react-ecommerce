@@ -1,4 +1,3 @@
-// resources/js/Components/Blog/BlogCard.tsx
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import { BlogPost } from '@/types/blog';
@@ -9,40 +8,45 @@ interface BlogCardProps {
 }
 
 const BlogCard: React.FC<BlogCardProps> = ({ post }) => {
+  const formatDateVN = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).replace(/\//g, '/');
+  };
+
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
       {post.featured_image && (
-        <Link href={`/blog/${post.slug}`}>
+        <Link href={`/blog/${post.slug}`} className="block relative h-48 overflow-hidden">
           <img
             src={post.featured_image}
             alt={post.title}
-            className="w-full h-56 object-cover"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
         </Link>
       )}
       <div className="p-5">
-        {post.category && (
-          <Link
-            href={`/blog/category/${post.category.slug}`}
-            className="text-blue-600 text-sm font-medium hover:underline"
-          >
-            {post.category.name}
-          </Link>
-        )}
-
         <Link href={`/blog/${post.slug}`}>
-          <h2 className="text-xl font-bold mt-2 mb-3 hover:text-blue-600 transition-colors duration-300">
+          <h2 className="text-xl font-bold text-neutral hover:text-primary transition-colors duration-300">
             {post.title}
           </h2>
         </Link>
 
-        <p className="text-gray-600 mb-4 line-clamp-3">
-          {post.excerpt || createExcerpt(post.content, 150)}
+        <p className="text-charcoal mt-3 line-clamp-3">
+          {post.excerpt || createExcerpt(post.content, 120)}
         </p>
 
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <span>{post.author?.name || 'Admin'}</span>
-          <time dateTime={post.published_at}>{formatDate(post.published_at)}</time>
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm text-charcoal">{formatDateVN(post.published_at)}</span>
+          <Link
+            href={`/blog/${post.slug}`}
+            className="text-primary hover:text-primary-dark transition-colors font-medium"
+          >
+            Đọc thêm
+          </Link>
         </div>
       </div>
     </div>

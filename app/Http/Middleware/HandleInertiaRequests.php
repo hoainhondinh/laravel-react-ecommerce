@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\DepartmentResource;
+use App\Models\Department;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -36,6 +38,7 @@ class HandleInertiaRequests extends Middleware
         $totalPrice = $cartService->getTotalPrice();
 
         $cartItems = $cartService->getCartItems();
+        $departments = Department::published()->withCount('products')->orderBy('name','asc')->get();
 
         return [
             ...parent::share($request),
@@ -50,7 +53,8 @@ class HandleInertiaRequests extends Middleware
             'success' => session('success'),
             'totalPrice' => $totalPrice,
             'totalQuantity' => $totalQuantity,
-            'miniCartItems' => $cartItems
+            'miniCartItems' => $cartItems,
+            'departments' => DepartmentResource::collection($departments)->toArray($request),
         ];
     }
 }

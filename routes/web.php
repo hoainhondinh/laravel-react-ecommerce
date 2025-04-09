@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Route;
 // Guest Routes
 Route::get('/', [ProductController::class, 'home'])->name('dashboard');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/product/{product:slug}', [ProductController::class, 'show'])
-    ->name('product.show');
+Route::get('/department/{department:slug}', [ProductController::class, 'department'])->name('department.show');
+Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
 // Blog Routes
 Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');

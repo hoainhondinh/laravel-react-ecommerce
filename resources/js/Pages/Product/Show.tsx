@@ -7,6 +7,7 @@ import {arraysAreEqual} from "@/helper";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import toast from "react-hot-toast";
 import SoldProgressBar from "@/Components/App/SoldProgressBar";
+
 function Show({product, variationOptions}: {
   product: Product, variationOptions: number[]
 }) {
@@ -19,14 +20,14 @@ function Show({product, variationOptions}: {
   }>({
     option_ids: {},
     quantity: 1,
-    price: null,// TODO polulate price on change
+    price: null,
   })
 
   const {url} = usePage();
 
-  // Khởi tạo state cho các tùy chọn được chọn - sử dụng object rỗng
+  // Khởi tạo state cho các tùy chọn được chọn
   const [selectedOptions, setSelectedOptions] =
-   useState<Record<number, VariationTypeOption>>([]);
+    useState<Record<number, VariationTypeOption>>([]);
 
   // Tính toán hình ảnh dựa trên tùy chọn được chọn
   const images = useMemo(() => {
@@ -37,26 +38,7 @@ function Show({product, variationOptions}: {
     return product.images;
   }, [product, selectedOptions]);
 
-  // const computedProduct = useMemo(() => {
-  //   const selectedOptionIds = Object.values(selectedOptions)
-  //     .map(op => op.id)
-  //   .sort();
-  //
-  //   for (let variation of product.variations) {
-  //     const optionIds = variation.variation_type_option_ids.sort();
-  //     if (arraysAreEqual(selectedOptionIds, optionIds)) {
-  //       return {
-  //         price: variation.price,
-  //         quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
-  //       }
-  //     }
-  //   }
-  //   return {
-  //     price: product.price,
-  //     quantity: product.quantity
-  //   };
-  // }, [product, selectedOptions]);
-// Trong computedProduct, thêm trường để tính giá khuyến mãi
+  // Trong computedProduct, thêm trường để tính giá khuyến mãi
   const computedProduct = useMemo(() => {
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
@@ -71,7 +53,7 @@ function Show({product, variationOptions}: {
           is_on_sale: variation.is_on_sale,
           discount_percent: variation.discount_percent,
           quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
-          sold_count: variation.sold_count || 0, // Thêm trường này
+          sold_count: variation.sold_count || 0,
         }
       }
     }
@@ -84,27 +66,8 @@ function Show({product, variationOptions}: {
       sold_count: product.sold_count || 0,
     };
   }, [product, selectedOptions]);
-  // Khởi tạo các tùy chọn mặc định
 
-  // useEffect(() => {
-  //   const initialOptions = {};
-  //
-  //   product.variationTypes.forEach((type, index) => {
-  //     // Tìm option ID theo index của mảng
-  //     // Chuyển đổi selectedOptionId từ string sang number
-  //     const selectedOptionId = Number(variationOptions[type.id]);
-  //     // Tìm option tương ứng
-  //     const matchedOption = type.options.find(
-  //       op => op.id === selectedOptionId
-  //     );
-  //
-  //     if (matchedOption) {
-  //       initialOptions[type.id] = matchedOption;
-  //     }
-  //   });
-  //
-  //   setSelectedOptions(initialOptions);
-  // }, []);
+  // Khởi tạo các tùy chọn mặc định
   useEffect(() => {
     const initialOptions = {};
 
@@ -129,6 +92,7 @@ function Show({product, variationOptions}: {
 
     setSelectedOptions(initialOptions);
   }, []);
+
   // Chuyển đổi tùy chọn thành dạng map
   const getOptionIdsMap = (newOptions:object) => {
     return Object.fromEntries(
@@ -160,22 +124,7 @@ function Show({product, variationOptions}: {
     })
   }
 
-  // Xử lý thay đổi số lượng
-  const onQuantityChange = (ev: React.ChangeEvent<HTMLSelectElement>) => {
-    form.setData('quantity', parseInt(ev.target.value))
-  }
-
   // Xử lý thêm vào giỏ hàng
-  // const addToCart = () => {
-  //   form.post(route('cart.store', product.id), {
-  //     preserveScroll: true,
-  //     preserveState: true,
-  //     onError: (err) => {
-  //       console.log(err)
-  //     }
-  //     // onSuccess: () => router.get(route('cart.index')),
-  //   })
-  // }
   const addToCart = () => {
     // Kiểm tra xem đã chọn đủ biến thể chưa
     const requiredVariationTypes = product.variationTypes;
@@ -191,7 +140,7 @@ function Show({product, variationOptions}: {
       const typeNames = unselectedTypes.map(type => type.name).join(', ');
       toast.error(`Vui lòng chọn ${typeNames} trước khi thêm vào giỏ hàng`);
 
-      // Highlight các biến thể chưa chọn bằng cách thêm class
+      // Highlight các biến thể chưa chọn
       unselectedTypes.forEach(type => {
         const element = document.getElementById(`variation-type-${type.id}`);
         if (element) {
@@ -215,36 +164,52 @@ function Show({product, variationOptions}: {
       }
     });
   }
+
   // Render các loại biến thể sản phẩm
   const renderProductVariationTypes = () => {
     return (
       product.variationTypes.map((type) => (
-        <div key={type.id}>
-          <b>{type.name}</b>
+        <div key={type.id} id={`variation-type-${type.id}`} className="mb-6">
+          <p className="text-[#4E3629] font-medium mb-2">{type.name}</p>
           {type.type === 'Image' &&
-          <div className="flex gap-2 mb-4">
-            {type.options.map((option) => (
-              <div onClick={()=>chooseOption(type.id,option)} key={option.id}>
-                {option.images && <img src={option.images[0].thumb} alt="" className={'w-[50px] ' + (
-                  selectedOptions[type.id]?.id === option.id ? 'outline outline-4 outline-primary' : ''
-                )}/>}
-              </div>
-            ))}
-          </div>
+            <div className="flex gap-2 mb-4">
+              {type.options.map((option) => (
+                <div
+                  onClick={() => chooseOption(type.id, option)}
+                  key={option.id}
+                  className="cursor-pointer transition-all duration-200"
+                >
+                  {option.images &&
+                    <img
+                      src={option.images[0].thumb}
+                      alt={option.name}
+                      className={`w-[50px] border-2 ${
+                        selectedOptions[type.id]?.id === option.id
+                          ? 'border-[#9E7A47]'
+                          : 'border-transparent hover:border-[#D8C8A4]'
+                      }`}
+                    />
+                  }
+                </div>
+              ))}
+            </div>
           }
           {type.type === 'Radio' &&
-            <div className="flex join mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               {type.options.map((option) => (
-                <input onChange={() => chooseOption(type.id, option)}
+                <button
+                  onClick={() => chooseOption(type.id, option)}
                   key={option.id}
-                  className="join-item btn"
-                  type="radio"
-                  value={option.id}
-                  checked={selectedOptions[type.id]?.id === option.id}
-                  name={'variation_type_' + type.id}
-                  aria-label={option.name}
-                />
-                ))}
+                  type="button"
+                  className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                    selectedOptions[type.id]?.id === option.id
+                      ? 'bg-[#9E7A47] text-white'
+                      : 'bg-white border border-[#D8C8A4] text-[#333333] hover:bg-[#D8C8A4]/10'
+                  }`}
+                >
+                  {option.name}
+                </button>
+              ))}
             </div>
           }
         </div>
@@ -252,97 +217,138 @@ function Show({product, variationOptions}: {
     )
   }
 
-  // Render nút thêm vào giỏ hàng
+  // Render nút thêm vào giỏ hàng với plus/minus quantity input
   const renderAddToCartButton = () => {
-    return(
-      <div className="mb-8 flex gap-4">
-        <select value={form.data.quantity} onChange={onQuantityChange} className="select select-bordered w-full">
-          {Array.from({
-            length: Math.min(10, computedProduct.quantity)
-          }).map((el, i) => (
-            <option value={i + 1} key={i + 1}>Quantity: {i + 1}</option>
-          ))
-          }
-        </select>
-        <button onClick={addToCart} className="btn btn-primary">Add to Cart</button>
-      </div>
+    const decreaseQuantity = () => {
+      if (form.data.quantity > 1) {
+        form.setData('quantity', form.data.quantity - 1);
+      }
+    };
 
-    )
-  }
+    const increaseQuantity = () => {
+      if (form.data.quantity < Math.min(10, computedProduct.quantity)) {
+        form.setData('quantity', form.data.quantity + 1);
+      }
+    };
+
+    return (
+      <div className="mb-8 flex flex-col sm:flex-row gap-4">
+        {/* Quantity input with plus/minus buttons */}
+        <div className="flex items-center border border-[#D8C8A4] rounded-md overflow-hidden w-full sm:w-40">
+          <button
+            type="button"
+            onClick={decreaseQuantity}
+            disabled={form.data.quantity <= 1}
+            className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+            </svg>
+          </button>
+
+          <input
+            type="text"
+            value={form.data.quantity}
+            readOnly
+            className="w-full px-2 py-2 text-center bg-white text-[#333333] focus:outline-none"
+          />
+
+          <button
+            type="button"
+            onClick={increaseQuantity}
+            disabled={form.data.quantity >= Math.min(10, computedProduct.quantity)}
+            className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+
+        <button
+          onClick={addToCart}
+          className="px-4 py-2 bg-[#9E7A47] text-white rounded-md hover:bg-[#4E3629] transition-colors flex-1"
+        >
+          Thêm vào giỏ hàng
+        </button>
+      </div>
+    );
+  };
 
   // Cập nhật form khi thay đổi tùy chọn
   useEffect(() => {
     const idsMap = Object.fromEntries(
       Object.entries(selectedOptions).map(([typeId, option]:[string, VariationTypeOption]) => [typeId, option.id])
     )
-    console.log(idsMap)
     form.setData('option_ids', idsMap)
   }, [selectedOptions]);
+
   return (
     <AuthenticatedLayout>
       <Head title={product.title}/>
-        <div className="container mx-auto p-8">
+      <div className="bg-white py-8">
+        <div className="container mx-auto px-4">
           <div className="grid gap-8 grid-cols-1 lg:grid-cols-12">
             <div className="col-span-7">
               <Carousel images={images}/>
             </div>
             <div className="col-span-5">
-              <h1 className="text-2xl mb-8">{product.title}</h1>
+              <h1 className="text-2xl font-medium text-[#4E3629] mb-6">{product.title}</h1>
 
-              <div>
-                {/*<div className="text-3xl font-semibold">*/}
-                {/*  <CurrencyFormatter amount={computedProduct.price}/>*/}
-                {/*</div>*/}
-                <div>
-                  {computedProduct.is_on_sale ? (
-                    <div className="mb-4">
-                      <div className="text-xl text-gray-500 line-through">
-                        <CurrencyFormatter amount={computedProduct.original_price}/>
-                      </div>
-                      <div className="flex items-center">
-                      <span className="text-3xl font-semibold text-red-600 mr-3">
+              <div className="mb-6">
+                {computedProduct.is_on_sale ? (
+                  <div className="mb-4">
+                    <div className="text-xl text-gray-500 line-through">
+                      <CurrencyFormatter amount={computedProduct.original_price}/>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-3xl font-semibold text-[#9E7A47] mr-3">
                         <CurrencyFormatter amount={computedProduct.price}/>
                       </span>
-                      <span className="bg-red-500 text-white px-2 py-1 rounded-md text-sm">
+                      <span className="bg-[#FFBF49] text-[#4E3629] px-2 py-1 rounded-md text-sm font-medium">
                         -{computedProduct.discount_percent}%
                       </span>
-                      </div>
                     </div>
-                  ) : (
-                    <div className="text-3xl font-semibold mb-4">
-                      <CurrencyFormatter amount={computedProduct.price}/>
-                    </div>
-                  )}
+                  </div>
+                ) : (
+                  <div className="text-3xl font-semibold text-[#9E7A47] mb-4">
+                    <CurrencyFormatter amount={computedProduct.price}/>
+                  </div>
+                )}
 
-                  {computedProduct.sold_count > 0 && (
-                    <div className="text-sm text-gray-500 mb-4">
-                      Đã bán: {computedProduct.sold_count}
-                    </div>
-                  )}
-                  <SoldProgressBar
-                    soldCount={computedProduct.sold_count || 0}
-                    quantity={computedProduct.quantity}
-                    className="my-4"
-                  />
-                </div>
+                {computedProduct.sold_count > 0 && (
+                  <div className="text-sm text-gray-600 mb-2">
+                    Đã bán: {computedProduct.sold_count}
+                  </div>
+                )}
+
+                <SoldProgressBar
+                  soldCount={computedProduct.sold_count || 0}
+                  quantity={computedProduct.quantity}
+                  className="my-4"
+                />
               </div>
 
               {renderProductVariationTypes()}
 
               {computedProduct.quantity != undefined &&
                 computedProduct.quantity < 10 &&
-                <div className="text-error my-4">
-                  <span>Only {computedProduct.quantity} left</span>
+                <div className="text-[#F87272] mb-4 text-sm font-medium bg-[#F87272]/10 px-3 py-2 rounded-md inline-block">
+                  Chỉ còn {computedProduct.quantity} sản phẩm
                 </div>
               }
+
               {renderAddToCartButton()}
 
-              <b className="text-xl">About the Item</b>
-              <div className="wysiwyg-output"
-                   dangerouslySetInnerHTML={{__html: product.description}}/>
+              <div className="border-t border-[#D8C8A4] pt-6">
+                <h2 className="text-xl font-medium text-[#4E3629] mb-4">Thông tin sản phẩm</h2>
+                <div className="wysiwyg-output text-[#333333]"
+                     dangerouslySetInnerHTML={{__html: product.description}}/>
+              </div>
             </div>
           </div>
         </div>
+      </div>
     </AuthenticatedLayout>
   );
 }

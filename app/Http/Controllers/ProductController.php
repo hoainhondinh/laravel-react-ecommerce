@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\DepartmentResource;
 use App\Http\Resources\ProductListResource;
 use App\Http\Resources\ProductResource;
+use App\Models\Category;
+use App\Models\Department;
 use App\Models\Product;
 use App\Models\BlogPost;
 use App\Models\Banner;
@@ -14,6 +17,39 @@ class ProductController extends Controller
 {
     public function home()
     {
+        // Lấy departments
+        $departments = Department::published()
+            ->withCount('products')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        // Lấy sản phẩm mới nhất
+        $newProducts = Product::query()
+            ->latest()
+            ->take(4)
+            ->get();
+
+        // Lấy sản phẩm đang giảm giá
+        $saleProducts = Product::query()
+            ->whereNotNull('original_price')
+            ->whereRaw('original_price > price')
+            ->take(4)
+            ->get();
+
+        // Lấy sản phẩm bán chạy
+        $bestSellerProducts = Product::query()
+            ->orderBy('created_at', 'desc')
+            ->take(4)
+            ->get();
+
+        // Lấy sản phẩm theo từng department
+        $departmentProducts = [];
+        foreach ($departments->take(2) as $department) {
+            $departmentProducts[$department->slug] = Product::query()
+                ->where('department_id', $department->id)
+                ->take(4)
+                ->get();
+        }
         // Lấy banner active
         $banners = Banner::active()
             ->with('media')  // Eager load media
@@ -35,11 +71,6 @@ class ProductController extends Controller
                     ]
                 ];
             });
-
-        // Lấy danh sách sản phẩm
-        $products = Product::query()
-            ->forWebsite()
-            ->paginate(12);
 
         // Lấy bài viết blog mới nhất
         $blogPosts = BlogPost::with(['category', 'author', 'media'])
@@ -64,9 +95,16 @@ class ProductController extends Controller
 
         // Render trang Home với dữ liệu
         return Inertia::render('Home', [
-            'products' => ProductListResource::collection($products),
+            'departments' => DepartmentResource::collection($departments),
+            'newProducts' => ProductListResource::collection($newProducts),
+            'saleProducts' => ProductListResource::collection($saleProducts),
+            'bestSellerProducts' => ProductListResource::collection($bestSellerProducts),
+            'departmentProducts' => array_map(function($products) {
+                return ProductListResource::collection($products);
+            }, $departmentProducts),
             'blogPosts' => $blogPosts,
             'banners' => $banners,
+            
         ]);
     }
 
@@ -88,4 +126,17 @@ class ProductController extends Controller
             'variationOptions' => request('options', []),
         ]);
     }
+    public function department(Department $department)
+    {
+        $products = Product::query()
+            ->forWebsite()
+            ->where('department_id', $department->id)
+            ->paginate(12);
+
+        return Inertia::render('Department/Index', [
+            'products' => ProductListResource::collection($products),
+            'currentDepartment' => new DepartmentResource($department),
+        ]);
+    }
+
 }

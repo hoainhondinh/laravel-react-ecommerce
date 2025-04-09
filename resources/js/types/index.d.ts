@@ -64,7 +64,13 @@ export type Product = {
     sold_count?: number; // Số lượng đã bán của biến thể
   }>
 }
-
+export interface Department {
+  id: number;
+  name: string;
+  slug: string;
+  products_count?: number;
+  active: boolean;
+}
 // Cập nhật CartItem để hỗ trợ giá gốc
 export type CartItem = {
   id: number;
@@ -108,6 +114,7 @@ export interface Category {
   id: number;
   name: string;
   slug: string;
+  department_id: number;
 }
 
 export interface BlogPost {
@@ -146,6 +153,9 @@ export interface Banner {
   start_date?: string;
   end_date?: string;
 }
+export interface ResourceResponse<T> {
+  data: T[];
+}
 
 export type PaginationProps<T> = {
   data: Array<T>
@@ -162,7 +172,10 @@ export type PageProps<
   totalQuantity: number;
   totalPrice: number;
   miniCartItems: CartItem[];
-  banners?: Banner[]; // Thêm banners vào PageProps
+  banners?: Banner[];
+  // departments?: Department[];
+  blogCategories?: ResourceResponse<Category>;
+  departments?: ResourceResponse<Department>;
 };
 // import { Config } from 'ziggy-js';
 //

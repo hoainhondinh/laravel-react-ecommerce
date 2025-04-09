@@ -65,7 +65,6 @@ function CartItem({item}: {item: CartItemType}) {
                          className="input-sm w-16"></TextInput>
             </div>
             <button onClick={() => onDeleteClick()} className="btn btn-sm btn-ghost">Delete</button>
-            <button className="btn btn-sm btn-ghost">Save for Later</button>
           </div>
           <div className="font-bold text-lg">
             <CurrencyFormatter amount={item.price * item.quantity}/>
