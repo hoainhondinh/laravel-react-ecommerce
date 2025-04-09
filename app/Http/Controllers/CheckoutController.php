@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Product;
 use App\Notifications\NewOrderNotification;
 use App\Services\CartService;
+use App\Services\StockManagementService;
 use App\Services\VietQRService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class CheckoutController extends Controller
@@ -32,9 +36,32 @@ class CheckoutController extends Controller
     public function store(Request $request, CartService $cartService)
     {
         // Kiểm tra lại giỏ hàng trước khi xử lý đơn hàng
-        if ($cartService->getTotalQuantity() === 0) {
+        $cartItems = $cartService->getCartItems();
+
+        if (count($cartItems) === 0) {
             return redirect()->route('cart.index')
                 ->with('error', 'Giỏ hàng của bạn đang trống');
+        }
+
+        // Kiểm tra số lượng tồn kho trước khi tạo đơn hàng
+        $stockValid = true;
+        $outOfStockItems = [];
+
+        foreach ($cartItems as $item) {
+            $product = Product::find($item['product_id']);
+            if (!$product) continue;
+
+            if (!$product->hasStock($item['quantity'], $item['option_ids'])) {
+                $stockValid = false;
+                $outOfStockItems[] = $item['title'];
+            }
+        }
+
+        if (!$stockValid) {
+            return back()->withInput()->with(
+                'error',
+                'Một số sản phẩm không đủ số lượng: ' . implode(', ', $outOfStockItems)
+            );
         }
 
         // Validate thông tin với quy tắc chi tiết hơn
@@ -59,6 +86,9 @@ class CheckoutController extends Controller
         ]);
 
         try {
+            // Bắt đầu transaction
+            DB::beginTransaction();
+
             // Tạo đơn hàng
             $order = Order::create([
                 'user_id' => auth()->id(),
@@ -72,9 +102,11 @@ class CheckoutController extends Controller
                 'address' => $validated['address'],
             ]);
 
-            // Thêm các sản phẩm từ giỏ hàng vào đơn hàng
-            $cartItems = $cartService->getCartItems();
+            // Thêm các sản phẩm từ giỏ hàng vào đơn hàng và giảm số lượng tồn kho
             foreach ($cartItems as $item) {
+                $product = Product::findOrFail($item['product_id']);
+
+                // Lưu thông tin vào bảng order_items
                 $order->items()->create([
                     'product_id' => $item['product_id'],
                     'variation_id' => $item['variation_id'] ?? null,
@@ -82,6 +114,11 @@ class CheckoutController extends Controller
                     'price' => $item['price'],
                     'options' => json_encode($item['options'] ?? []),
                 ]);
+
+                // Giảm số lượng tồn kho
+//                $product->decreaseStock($item['quantity'], $item['option_ids']);
+                $stockManagementService = app(StockManagementService::class);
+                $stockManagementService->decreaseStockForOrder($order);
             }
 
             // Gửi email xác nhận đơn hàng
@@ -90,12 +127,18 @@ class CheckoutController extends Controller
             // Xóa giỏ hàng
             $cartService->clearCart();
 
+            // Commit transaction
+            DB::commit();
+
             // Chuyển đến trang xác nhận đơn hàng
             return redirect()->route('checkout.confirmation', $order->id);
 
         } catch (\Exception $e) {
+            // Rollback transaction
+            DB::rollBack();
+
             // Log lỗi nếu có
-            \Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage());
+            Log::error('Lỗi khi tạo đơn hàng: ' . $e->getMessage() . PHP_EOL . $e->getTraceAsString());
 
             // Trả về thông báo lỗi
             return back()->withInput()->with('error', 'Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại sau.');
@@ -139,7 +182,7 @@ class CheckoutController extends Controller
 
     public function success(Order $order)
     {
-        // Tương tự như trên
+
         if ($order->user_id !== auth()->id()) {
             abort(403);
         }

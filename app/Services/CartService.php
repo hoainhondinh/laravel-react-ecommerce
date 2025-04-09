@@ -4,14 +4,14 @@ namespace App\Services;
 
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariation;
 use App\Models\VariationType;
 use App\Models\VariationTypeOption;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use function Pest\Laravel\json;
-
+use Illuminate\Validation\ValidationException;
 
 class CartService
 {
@@ -19,12 +19,20 @@ class CartService
 
     protected const COOKIE_NAME = 'cartItems';
     protected const COOKIE_LIFETIME = 60 * 24 * 365; //1 YEAR
-    public function addItemToCart(Product $product, int $quantity = 1, $optionIds = null )
+
+    public function addItemToCart(Product $product, int $quantity = 1, $optionIds = null)
     {
         if ($optionIds === null){
             $optionIds = $product->variationTypes
                 ->mapWithKeys(fn(VariationType $type) => [$type->id => $type->options[0]?->id])
                 ->toArray();
+        }
+
+        // Kiểm tra xem có đủ số lượng tồn kho không
+        if (!$product->hasStock($quantity, $optionIds)) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Số lượng sản phẩm trong kho không đủ'
+            ]);
         }
 
         $price = $product->getPriceForOptions($optionIds);
@@ -34,15 +42,30 @@ class CartService
         } else {
             $this->saveItemToCookies($product->id, $quantity, $price, $optionIds);
         }
+
+        // Xóa cache
+        $this->cachedCartItems = null;
     }
 
     public function updateItemQuantity(int $productId, int $quantity, $optionIds = null)
     {
+        // Kiểm tra xem có đủ số lượng tồn kho không
+        $product = Product::findOrFail($productId);
+
+        if (!$product->hasStock($quantity, $optionIds)) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Số lượng sản phẩm trong kho không đủ'
+            ]);
+        }
+
         if (\Auth::check()){
             $this->updateItemQuantityInDatabase($productId, $quantity, $optionIds);
         } else{
             $this->updateItemQuantityInCookies($productId, $quantity, $optionIds);
         }
+
+        // Xóa cache
+        $this->cachedCartItems = null;
     }
 
     public function removeItemFromCart(int $productId, $optionIds = null)
@@ -52,7 +75,11 @@ class CartService
         } else {
             $this->removeItemFromCookies($productId, $optionIds);
         }
+
+        // Xóa cache
+        $this->cachedCartItems = null;
     }
+
     public function clearCart(): void
     {
         if (Auth::check()) {
@@ -66,6 +93,7 @@ class CartService
         // Xóa cache
         $this->cachedCartItems = null;
     }
+
     public function getCartItems(): array
     {
         //We need to put this in try-catch, otherwise if something goes wrong
@@ -82,7 +110,7 @@ class CartService
 
                 $productIds = collect($cartItems)->map(fn($item) => $item['product_id']);
                 $products = Product::whereIn('id', $productIds)
-                    ->with('user.vendor')
+                    ->with('user.vendor', 'variations')
                     ->forWebsite()
                     ->get()
                     ->keyBy('id');
@@ -92,15 +120,23 @@ class CartService
                     $product = data_get($products, $cartItem['product_id']);
                     if (!$product) continue;
 
+                    // Kiểm tra biến thể và lấy thông tin
+                    $variation = null;
                     $optionInfo = [];
                     $options = VariationTypeOption::with('variationType')
                         ->whereIn('id', $cartItem['option_ids'])
                         ->get()
                         ->keyBy('id');
 
+                    if (count($cartItem['option_ids']) > 0) {
+                        $variation = $product->getVariationForOptions($cartItem['option_ids']);
+                    }
+
                     $imageUrl = null;
                     foreach ($cartItem['option_ids'] as $option_id){
                         $option = data_get($options, $option_id);
+                        if (!$option) continue;
+
                         if (!$imageUrl) {
                             $imageUrl = $option->getfirstMediaUrl('images', 'small');
                         }
@@ -110,24 +146,26 @@ class CartService
                             'type' => [
                                 'id' => $option->variationType->id,
                                 'name' => $option->variationType->name,
-
                             ]
                         ];
                     }
 
+                    $availableQuantity = $variation ? $variation->quantity : $product->quantity;
+
                     $cartItemData[] = [
                         'id' => $cartItem['id'],
                         'product_id' => $product->id,
+                        'variation_id' => $variation ? $variation->id : null,
                         'title' => $product->title,
                         'slug' => $product->slug,
                         'price' => $cartItem['price'],
                         'quantity' => $cartItem['quantity'],
+                        'available_quantity' => $availableQuantity,
                         'option_ids' => $cartItem['option_ids'],
                         'options' => $optionInfo,
                         'image' => $imageUrl ?: $product->getFirstMediaUrl('images', 'small'),
                         'user' => [
                             'id' => $product->created_by,
-//                            'name' => $product->user->vendor->store_name,
                             'name' => $product->user && $product->user->vendor ? $product->user->vendor->store_name : 'Không có cửa hàng',
                         ],
                     ];
@@ -174,7 +212,6 @@ class CartService
         if ($cartItem) {
             $cartItem->update([
                 'quantity' => $quantity,
-
             ]);
         }
     }
@@ -258,6 +295,7 @@ class CartService
             ->where('variation_type_option_ids', json_encode($optionIds))
             ->delete();
     }
+
     protected function removeItemFromCookies(int $productId, array $optionIds): void
     {
         $cartItems = $this->getCartItemsFromCookies();
@@ -292,6 +330,7 @@ class CartService
 
         return $cartItems;
     }
+
     protected function getCartItemsFromCookies()
     {
         $cartItems = json_decode(Cookie::get(self::COOKIE_NAME, '[]'), true);
@@ -330,7 +369,7 @@ class CartService
             if ($existingItem) {
                 //If the item exist, update the quantity
                 $existingItem->update([
-                   'quantity' => $existingItem->quantity + $cartItem['quantity'],
+                    'quantity' => $existingItem->quantity + $cartItem['quantity'],
                     'price' => $cartItem['price'], //Optional: Update price if needed
                 ]);
             } else {

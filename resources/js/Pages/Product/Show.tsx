@@ -38,7 +38,7 @@ function Show({product, variationOptions}: {
     return product.images;
   }, [product, selectedOptions]);
 
-  // Trong computedProduct, thêm trường để tính giá khuyến mãi
+  // Tính toán thông tin sản phẩm dựa trên biến thể được chọn
   const computedProduct = useMemo(() => {
     const selectedOptionIds = Object.values(selectedOptions)
       .map(op => op.id)
@@ -54,6 +54,7 @@ function Show({product, variationOptions}: {
           discount_percent: variation.discount_percent,
           quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
           sold_count: variation.sold_count || 0,
+          variation_id: variation.id,
         }
       }
     }
@@ -64,6 +65,7 @@ function Show({product, variationOptions}: {
       discount_percent: product.discount_percent,
       quantity: product.quantity,
       sold_count: product.sold_count || 0,
+      variation_id: null,
     };
   }, [product, selectedOptions]);
 
@@ -151,6 +153,12 @@ function Show({product, variationOptions}: {
       return;
     }
 
+    // Kiểm tra số lượng tồn kho
+    if (form.data.quantity > computedProduct.quantity) {
+      toast.error(`Chỉ còn ${computedProduct.quantity} sản phẩm trong kho`);
+      return;
+    }
+
     // Nếu đã chọn đủ biến thể, tiến hành thêm vào giỏ hàng
     form.post(route('cart.store', product.id), {
       preserveScroll: true,
@@ -231,14 +239,17 @@ function Show({product, variationOptions}: {
       }
     };
 
+    // Kiểm tra nếu sản phẩm hết hàng
+    const isOutOfStock = computedProduct.quantity <= 0;
+
     return (
       <div className="mb-8 flex flex-col sm:flex-row gap-4">
         {/* Quantity input with plus/minus buttons */}
-        <div className="flex items-center border border-[#D8C8A4] rounded-md overflow-hidden w-full sm:w-40">
+        <div className={`flex items-center border border-[#D8C8A4] rounded-md overflow-hidden w-full sm:w-40 ${isOutOfStock ? 'opacity-50' : ''}`}>
           <button
             type="button"
             onClick={decreaseQuantity}
-            disabled={form.data.quantity <= 1}
+            disabled={form.data.quantity <= 1 || isOutOfStock}
             className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -256,7 +267,7 @@ function Show({product, variationOptions}: {
           <button
             type="button"
             onClick={increaseQuantity}
-            disabled={form.data.quantity >= Math.min(10, computedProduct.quantity)}
+            disabled={form.data.quantity >= Math.min(10, computedProduct.quantity) || isOutOfStock}
             className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -267,9 +278,10 @@ function Show({product, variationOptions}: {
 
         <button
           onClick={addToCart}
-          className="px-4 py-2 bg-[#9E7A47] text-white rounded-md hover:bg-[#4E3629] transition-colors flex-1"
+          disabled={isOutOfStock}
+          className={`px-4 py-2 ${isOutOfStock ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#9E7A47] hover:bg-[#4E3629]'} text-white rounded-md transition-colors flex-1`}
         >
-          Thêm vào giỏ hàng
+          {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
         </button>
       </div>
     );
@@ -331,12 +343,16 @@ function Show({product, variationOptions}: {
 
               {renderProductVariationTypes()}
 
-              {computedProduct.quantity != undefined &&
-                computedProduct.quantity < 10 &&
+              {/* Hiển thị thông tin tồn kho */}
+              {computedProduct.quantity === 0 ? (
+                <div className="text-[#F87272] mb-4 text-sm font-medium bg-[#F87272]/10 px-3 py-2 rounded-md inline-block">
+                  Hết hàng
+                </div>
+              ) : computedProduct.quantity < 10 && (
                 <div className="text-[#F87272] mb-4 text-sm font-medium bg-[#F87272]/10 px-3 py-2 rounded-md inline-block">
                   Chỉ còn {computedProduct.quantity} sản phẩm
                 </div>
-              }
+              )}
 
               {renderAddToCartButton()}
 

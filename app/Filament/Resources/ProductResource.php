@@ -155,7 +155,7 @@ class ProductResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\InventoryAdjustmentsRelationManager::class,
         ];
     }
 
@@ -168,6 +168,7 @@ class ProductResource extends Resource
             'images' => Pages\ProductImages::route('/{record}/images'),
             'variation-types' => Pages\ProductVariationTypes::route('/{record}/variation-types'),
             'variations' => Pages\ProductVariations::route('/{record}/variations'),
+            'inventory' => Pages\ManageInventory::route('/{record}/inventory'),
         ];
     }
 

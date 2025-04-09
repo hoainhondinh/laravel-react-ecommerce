@@ -104,7 +104,7 @@ class ProductController extends Controller
             }, $departmentProducts),
             'blogPosts' => $blogPosts,
             'banners' => $banners,
-            
+
         ]);
     }
 
@@ -137,6 +137,70 @@ class ProductController extends Controller
             'products' => ProductListResource::collection($products),
             'currentDepartment' => new DepartmentResource($department),
         ]);
+    }
+    public function manageInventory(Product $product)
+    {
+        // Kiểm tra quyền
+        if (!auth()->user()->can('manage inventory')) {
+            abort(403);
+        }
+
+        // Tải dữ liệu
+        $product->load([
+            'variations',
+            'inventoryAdjustments' => function($query) {
+                $query->with('user')->latest();
+            }
+        ]);
+
+        return Inertia::render('Products/InventoryManagement', [
+            'product' => new ProductResource($product),
+            'canManageInventory' => true
+        ]);
+    }
+
+    public function adjustProductInventory(Request $request, Product $product)
+    {
+        // Kiểm tra quyền
+        if (!auth()->user()->can('manage inventory')) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'adjustment' => 'required|integer',
+            'reason' => 'required|string|max:255',
+        ]);
+
+        // Sử dụng phương thức adjustStock đã có trong model Product
+        $result = $product->adjustStock($validated['adjustment'], $validated['reason']);
+
+        if ($result) {
+            return back()->with('success', 'Đã cập nhật tồn kho sản phẩm');
+        } else {
+            return back()->withErrors(['adjustment' => 'Không thể điều chỉnh tồn kho']);
+        }
+    }
+
+    public function adjustVariationInventory(Request $request, Product $product, $variationId)
+    {
+        // Kiểm tra quyền
+        if (!auth()->user()->can('manage inventory')) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'adjustment' => 'required|integer',
+            'reason' => 'required|string|max:255',
+        ]);
+
+        // Sử dụng phương thức adjustStock đã có trong model Product
+        $result = $product->adjustStock($validated['adjustment'], $validated['reason'], $variationId);
+
+        if ($result) {
+            return back()->with('success', 'Đã cập nhật tồn kho biến thể');
+        } else {
+            return back()->withErrors(['adjustment' => 'Không thể điều chỉnh tồn kho biến thể']);
+        }
     }
 
 }

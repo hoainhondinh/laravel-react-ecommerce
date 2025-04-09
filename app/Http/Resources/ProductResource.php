@@ -69,7 +69,23 @@ class ProductResource extends JsonResource
                     'quantity' => $variation->quantity,
                     'price' => $variation->price,
                 ];
-            })
+            }),
+            'inventoryAdjustments' => $this->whenLoaded('inventoryAdjustments', function() {
+                return $this->inventoryAdjustments->map(function($adjustment) {
+                    return [
+                        'id' => $adjustment->id,
+                        'quantity_before' => $adjustment->quantity_before,
+                        'quantity_after' => $adjustment->quantity_after,
+                        'adjustment' => $adjustment->adjustment,
+                        'type' => $adjustment->type,
+                        'reason' => $adjustment->reason,
+                        'created_at' => $adjustment->created_at,
+                        'user' => [
+                            'name' => $adjustment->user->name,
+                        ],
+                    ];
+                });
+            }),
         ];
     }
 }

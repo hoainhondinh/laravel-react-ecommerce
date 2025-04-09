@@ -61,6 +61,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/{order}/confirm-payment', [PaymentController::class, 'confirmPayment'])->name('payment.confirm');
         Route::post('/orders/{order}/regenerate-qr', [PaymentController::class, 'regenerateQR'])->name('payment.regenerate-qr');
 
+        Route::get('/products/{product}/inventory', [ProductController::class, 'manageInventory'])
+            ->name('products.inventory');
+        Route::post('/products/{product}/adjust-inventory', [ProductController::class, 'adjustProductInventory'])
+            ->name('products.adjust-inventory');
+        Route::post('/products/{product}/variations/{variation}/adjust-inventory', [ProductController::class, 'adjustVariationInventory'])
+            ->name('products.adjust-variation-inventory');
 
     });
 });

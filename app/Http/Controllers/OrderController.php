@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariation;
+use App\Services\StockManagementService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -23,7 +26,6 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-
         // Đảm bảo rằng người dùng chỉ xem được đơn hàng của mình
         if ($order->user_id !== auth()->id()) {
             abort(403);
@@ -52,6 +54,7 @@ class OrderController extends Controller
             'order' => $order
         ]);
     }
+
     public function cancel(Request $request, Order $order)
     {
         // Kiểm tra quyền sở hữu đơn hàng
@@ -69,37 +72,58 @@ class OrderController extends Controller
             'cancel_reason' => 'nullable|string|max:255',
         ]);
 
-        // Cập nhật trạng thái đơn hàng
-        $order->update([
-            'status' => 'canceled',
-            'payment_status' => $order->payment_status === 'awaiting' ? 'failed' : $order->payment_status,
-            'cancel_reason' => $request->cancel_reason,
-            'canceled_at' => now(),
-        ]);
+        try {
+            // Bắt đầu transaction
+            DB::beginTransaction();
 
-        // Cập nhật lại số lượng trong kho
-        foreach ($order->items as $item) {
-            if ($item->variation_id) {
-                $variation = ProductVariation::find($item->variation_id);
-                if ($variation) {
-                    $variation->increment('quantity', $item->quantity);
-                }
-            } else {
+            // Cập nhật trạng thái đơn hàng
+            $order->update([
+                'status' => 'canceled',
+                'payment_status' => $order->payment_status === 'awaiting' ? 'failed' : $order->payment_status,
+                'cancel_reason' => $request->cancel_reason,
+                'canceled_at' => now(),
+            ]);
+
+            // Cập nhật lại số lượng trong kho
+            foreach ($order->items as $item) {
                 $product = Product::find($item->product_id);
-                if ($product) {
-                    $product->increment('quantity', $item->quantity);
+                if (!$product) continue;
+
+                // Chuyển đổi options thành option_ids nếu cần
+                $optionIds = [];
+                if ($item->options) {
+                    $options = is_string($item->options) ? json_decode($item->options, true) : $item->options;
+                    foreach ($options as $option) {
+                        if (isset($option['id'])) {
+                            $optionIds[] = $option['id'];
+                        }
+                    }
                 }
+
+                // Hoan tra tồn kho
+                $stockManagementService = app(StockManagementService::class);
+                $stockManagementService->increaseStockForCancelledOrder($order);
             }
+
+            // Lưu lịch sử đơn hàng
+            $order->histories()->create([
+                'status' => 'canceled',
+                'note' => 'Đơn hàng đã bị hủy bởi khách hàng. ' . ($request->cancel_reason ? 'Lý do: ' . $request->cancel_reason : ''),
+            ]);
+
+            // Commit transaction
+            DB::commit();
+
+            return back()->with('success', 'Đơn hàng đã được hủy thành công.');
+
+        } catch (\Exception $e) {
+            // Rollback transaction
+            DB::rollBack();
+
+            // Log lỗi
+            Log::error('Lỗi khi hủy đơn hàng: ' . $e->getMessage() . PHP_EOL . $e->getTraceAsString());
+
+            return back()->with('error', 'Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại sau.');
         }
-
-        // Lưu lịch sử đơn hàng
-        $order->histories()->create([
-            'status' => 'canceled',
-            'note' => 'Đơn hàng đã bị hủy bởi khách hàng. ' . ($request->cancel_reason ? 'Lý do: ' . $request->cancel_reason : ''),
-        ]);
-
-        // Gửi email thông báo (sẽ triển khai ở phần sau)
-
-        return back()->with('success', 'Đơn hàng đã được hủy thành công.');
     }
 }
