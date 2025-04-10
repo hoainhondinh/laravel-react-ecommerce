@@ -94,6 +94,12 @@ return [
                 'postmark',
             ],
         ],
+        'markdown' => [
+            'theme' => 'yensao',
+            'paths' => [
+                resource_path('views/vendor/mail'),
+            ],
+        ],
 
     ],
 
