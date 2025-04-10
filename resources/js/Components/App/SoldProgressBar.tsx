@@ -3,54 +3,77 @@ import React from 'react';
 interface SoldProgressBarProps {
   soldCount: number;
   quantity: number;
-  showPercentage?: boolean;
-  showMessage?: boolean;
+  showLabel?: boolean;
+  showInfo?: boolean;
   className?: string;
 }
 
 export default function SoldProgressBar({
                                           soldCount,
                                           quantity,
-                                          showPercentage = true,
-                                          showMessage = true,
+                                          showLabel = true,
+                                          showInfo = true,
                                           className = ''
                                         }: SoldProgressBarProps) {
   const totalStock = quantity + soldCount;
   const soldPercentage = totalStock > 0 ? (soldCount / totalStock) * 100 : 0;
+  const quantityPercentage = totalStock > 0 ? (quantity / totalStock) * 100 : 0;
+
+  // Ensure minimum width for text visibility if showing label
+  const displayPercentage = showLabel ? Math.max(soldPercentage, 15) : soldPercentage;
+
+  // Determine which status to show based on new conditions
+  const getStatus = () => {
+    if (quantityPercentage <= 15) {
+      return {
+        text: `CHỈ CÒN ${quantity}`,
+        gradientClass: 'from-amber-300 to-red-200',
+        icon: '🔥'
+      };
+    } else if (soldPercentage >= 15) {
+      return {
+        text: `ĐÃ BÁN ${soldCount}`,
+        gradientClass: 'from-amber-300 to-yellow-200',
+        icon: '🚀'
+      };
+    } else {
+      return {
+        text: 'ĐANG BÁN CHẠY',
+        gradientClass: 'from-amber-300 to-yellow-200',
+        icon: '⭐'
+      };
+    }
+  };
+
+  const status = getStatus();
 
   return (
-    <div className={`${className}`}>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-600">Đã bán: {soldCount}</span>
-        <span className="text-gray-600">Còn lại: {quantity}</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-2.5">
+    <div className={`${className} w-full`}>
+      {/* Custom styled progress bar with dark background */}
+      <div className="relative w-full bg-yellow-900 rounded-md h-6 overflow-hidden shadow-inner">
+        {/* Gradient progress value */}
         <div
-          className="bg-blue-600 h-2.5 rounded-full relative"
-          style={{ width: `${Math.min(soldPercentage, 100)}%` }}
-        >
-          {showPercentage && soldPercentage > 10 && (
-            <span className="absolute text-xs text-white font-medium right-1 leading-3 top-0">
-              {Math.round(soldPercentage)}%
-            </span>
-          )}
-        </div>
+          className={`h-full bg-gradient-to-r ${status.gradientClass} rounded-md transition-all duration-300 ${quantityPercentage <= 15 ? 'bg-stripes bg-stripes-white animate-pulse' : ''}`}
+          style={{width: `${displayPercentage}%`}}
+        ></div>
+
+        {/* Text overlay - centered */}
+        {showLabel && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              className="text-xs font-bold text-white-800 flex items-center"> {/* Darker text for better contrast on light yellow */}
+              {status.icon && <span className="mr-1">{status.icon}</span>}
+              <span className="text-white font-extrabold tracking-wide text-xs sm:text-sm">{status.text}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {showMessage && (
-        <>
-          {soldPercentage > 75 && (
-            <p className="text-red-500 text-sm mt-2 font-medium">
-              Sản phẩm sắp hết hàng, hãy nhanh tay mua ngay!
-            </p>
-          )}
-
-          {soldPercentage > 50 && soldPercentage <= 75 && (
-            <p className="text-orange-500 text-sm mt-2 font-medium">
-              Sản phẩm đang bán chạy, còn hạn chế số lượng.
-            </p>
-          )}
-        </>
+      {showInfo && (
+        <div className="flex justify-between text-xs mt-1">
+          {/*<span className="text-gray-600">Đã bán: {soldCount}</span>*/}
+          <span className="text-gray-600">Còn lại: {quantity}</span>
+        </div>
       )}
     </div>
   );

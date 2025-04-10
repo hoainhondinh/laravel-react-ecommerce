@@ -1,4 +1,3 @@
-// resources/js/Components/App/ProductItem.tsx
 import {Product} from "@/types";
 import {Link, router} from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
@@ -85,7 +84,7 @@ export default function ProductItem({product}: {product: Product }) {
             onClick={handleButtonClick}
             className="w-full py-2 bg-[#9E7A47] text-white rounded-md hover:bg-[#4E3629] transition-colors font-medium"
           >
-            Chi tiết
+            Mua ngay
           </button>
         </div>
       </div>

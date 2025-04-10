@@ -306,7 +306,6 @@ function Show({product, variationOptions}: {
             </div>
             <div className="col-span-5">
               <h1 className="text-2xl font-medium text-[#4E3629] mb-6">{product.title}</h1>
-
               <div className="mb-6">
                 {computedProduct.is_on_sale ? (
                   <div className="mb-4">
@@ -325,12 +324,6 @@ function Show({product, variationOptions}: {
                 ) : (
                   <div className="text-3xl font-semibold text-[#9E7A47] mb-4">
                     <CurrencyFormatter amount={computedProduct.price}/>
-                  </div>
-                )}
-
-                {computedProduct.sold_count > 0 && (
-                  <div className="text-sm text-gray-600 mb-2">
-                    Đã bán: {computedProduct.sold_count}
                   </div>
                 )}
 
