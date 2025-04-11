@@ -105,6 +105,39 @@ interface OrderItem {
   };
   options: string | any[]; // Could be a JSON string or an array
 }
+export interface Order {
+  id: number;
+  user_id: number | null;
+  total_price: number;
+  status: string;
+  payment_status: string;
+  payment_method: string;
+  transaction_id?: string;
+  payment_error?: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  cancel_reason?: string;
+  canceled_at?: string;
+  created_at: string;
+  updated_at: string;
+  is_guest: boolean;
+  token?: string;
+  items: OrderItem[];
+  histories?: OrderHistory[];
+  status_text?: string;
+  payment_status_text?: string;
+  can_be_canceled?: boolean;
+}
+
+export interface OrderHistory {
+  id: number;
+  order_id: number;
+  status: string;
+  note?: string;
+  created_at: string;
+}
 export interface Author {
   id: number;
   name: string;
@@ -173,10 +206,48 @@ export type PageProps<
   totalPrice: number;
   miniCartItems: CartItem[];
   banners?: Banner[];
-  // departments?: Department[];
   blogCategories?: ResourceResponse<Category>;
   departments?: ResourceResponse<Department>;
+  success?: string;
+  error?: string;
+  checkoutPending?: boolean;
+  isGuest?: boolean;
+  guestInfo?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
 };
+export interface GuestCheckoutProps extends PageProps {
+  auth: {
+    user: User | null;
+  };
+}
+
+export interface CheckoutProps extends PageProps {
+  cartItems: Record<number, GroupedCartItems>;
+  totalPrice: number;
+  isGuest: boolean;
+  guestInfo: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export interface OrderConfirmationProps extends PageProps {
+  order: Order;
+  qrCodeUrl: string | null;
+  isGuest?: boolean;
+}
+
+export interface OrderShowProps extends PageProps {
+  order: Order;
+}
+
+export interface CheckoutNoticeProps {
+  show: boolean;
+}
 // import { Config } from 'ziggy-js';
 //
 // export interface User {

@@ -25,6 +25,7 @@ class AuthenticatedSessionController extends Controller
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'checkoutPending' => session('checkout_pending', false), // Thêm biến này
         ]);
     }
 
@@ -40,17 +41,21 @@ class AuthenticatedSessionController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
-        $route = "/";
-        if($user -> hasAnyRole([RolesEnum::Admin, RolesEnum::Vendor])){
-            $cartService->moveCartItemsToDatabase($user->id);
-            return Inertia::location(route('filament.admin.pages.dashboard'));
-        } else{
-            $route = route('dashboard', absolute: false);
-        }
-
         $cartService->moveCartItemsToDatabase($user->id);
 
-        return redirect()->intended($route);
+        // Kiểm tra nếu user đang trong quá trình checkout
+        if (session()->has('checkout_pending')) {
+            session()->forget('checkout_pending');
+            return redirect()->route('checkout.index');
+        }
+
+        // Xử lý chuyển hướng tùy thuộc vào vai trò
+        if ($user->hasAnyRole([RolesEnum::Admin, RolesEnum::Vendor])) {
+            return Inertia::location(route('filament.admin.pages.dashboard'));
+        } else {
+            $route = route('dashboard', absolute: false);
+            return redirect()->intended($route);
+        }
     }
 
     /**

@@ -215,7 +215,48 @@ class CartService
             ]);
         }
     }
+    /**
+     * Kiểm tra số lượng tồn kho cho tất cả các sản phẩm trong giỏ hàng
+     *
+     * @return array Danh sách các sản phẩm không đủ số lượng
+     */
+    public function checkCartItemsStock(): array
+    {
+        $outOfStockItems = [];
+        $cartItems = $this->getCartItems();
 
+        foreach ($cartItems as $item) {
+            $product = Product::find($item['product_id']);
+            if (!$product) continue;
+
+            if (!$product->hasStock($item['quantity'], $item['option_ids'])) {
+                $outOfStockItems[] = [
+                    'id' => $item['product_id'],
+                    'title' => $item['title'],
+                    'available' => $product->getAvailableQuantity($item['option_ids']),
+                    'requested' => $item['quantity']
+                ];
+            }
+        }
+
+        return $outOfStockItems;
+    }
+
+    /**
+     * Kiểm tra xem có thể checkout không
+     *
+     * @return bool|array true nếu có thể checkout, danh sách các sản phẩm không đủ số lượng nếu không thể
+     */
+    public function canCheckout()
+    {
+        $outOfStockItems = $this->checkCartItemsStock();
+
+        if (count($outOfStockItems) > 0) {
+            return $outOfStockItems;
+        }
+
+        return true;
+    }
     protected function updateItemQuantityInCookies(int $productId, int $quantity, array $optionIds): void
     {
         $cartItems = $this->getCartItemsFromCookies();
@@ -385,5 +426,8 @@ class CartService
         }
         //After transferring the items, delete the cart from the cookies
         Cookie::queue(self::COOKIE_NAME,'',-1); //Delete cookie by setting a
+
+        // Xóa cache
+        $this->cachedCartItems = null;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\URL;
 
 class Order extends Model
 {
@@ -22,6 +23,8 @@ class Order extends Model
         'address',
         'cancel_reason',
         'canceled_at',
+        'is_guest', // Thêm trường này
+        'token',    // Thêm trường này
     ];
 
     protected $dates = [
@@ -29,7 +32,9 @@ class Order extends Model
         'updated_at',
         'canceled_at',
     ];
+
     protected $appends = ['status_text', 'payment_status_text', 'can_be_canceled'];
+
     // Relationships
     public function user(): BelongsTo
     {
@@ -52,12 +57,6 @@ class Order extends Model
         // Chỉ cho phép hủy đơn hàng ở trạng thái pending hoặc processing
         return in_array($this->status, ['pending', 'processing'])
             && $this->payment_status !== 'paid';
-
-        // - Không cho phép hủy đơn hàng đã thanh toán
-        // - Chỉ cho phép hủy trong vòng 24 giờ sau khi đặt hàng
-        // return in_array($this->status, ['pending', 'processing'])
-        //     && $this->payment_status !== 'paid'
-        //     && $this->created_at->diffInHours(now()) <= 24;
     }
 
     // Accessor để trả về trạng thái có thể hủy cho giao diện
@@ -86,7 +85,44 @@ class Order extends Model
             'paid' => 'Đã thanh toán',
             'awaiting' => 'Chờ chuyển khoản',
             'failed' => 'Thất bại',
+            'pending_confirmation' => 'Chờ xác nhận thanh toán',
             default => 'Không xác định',
         };
+    }
+
+    /**
+     * Tạo URL có chữ ký cho khách không đăng nhập
+     * Dùng để gửi URL theo dõi đơn hàng qua email
+     *
+     * @param int $expirationInMinutes Thời gian hết hạn của URL (phút)
+     * @return string URL có chữ ký
+     */
+    public function getSignedGuestUrl(int $expirationInMinutes = 43200): string
+    {
+        // Mặc định: hết hạn sau 30 ngày (43200 phút)
+        if ($this->is_guest !== true) {
+            throw new \Exception('Chỉ áp dụng cho đơn hàng của khách không đăng nhập.');
+        }
+
+        return URL::temporarySignedRoute(
+            'guest.orders.show',
+            now()->addMinutes($expirationInMinutes),
+            ['order' => $this->id]
+        );
+    }
+
+    /**
+     * Kiểm tra token của đơn hàng guest
+     *
+     * @param string $token Token cần kiểm tra
+     * @return bool Kết quả kiểm tra
+     */
+    public function validateGuestToken(string $token): bool
+    {
+        if ($this->is_guest !== true) {
+            return false;
+        }
+
+        return $this->token === $token;
     }
 }

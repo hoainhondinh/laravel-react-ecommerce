@@ -270,19 +270,24 @@ class OrderResource extends Resource
                         // Thông tin khách hàng
                         Forms\Components\Section::make('Thông tin khách hàng')
                             ->schema([
+                                Forms\Components\Placeholder::make('customer_type')
+                                    ->label('Loại khách hàng')
+                                    ->content(fn (Order $record): string => $record->is_guest ? 'Khách không đăng nhập' : 'Khách đã đăng nhập'),
+
                                 Forms\Components\Placeholder::make('user_name')
                                     ->label('Khách hàng')
-                                    ->content(fn (Order $record): string => $record->user->name),
+                                    ->content(fn (Order $record): string => $record->is_guest ? $record->name : ($record->user ? $record->user->name : 'N/A')),
 
                                 Forms\Components\Placeholder::make('user_email')
                                     ->label('Email')
-                                    ->content(fn (Order $record): string => $record->user->email ?? 'N/A'),
+                                    ->content(fn (Order $record): string => $record->is_guest ? $record->email : ($record->user ? $record->user->email : 'N/A')),
 
                                 Forms\Components\Placeholder::make('user_created')
                                     ->label('Ngày tạo tài khoản')
-                                    ->content(fn (Order $record): string => $record->user->created_at
+                                    ->content(fn (Order $record): string => $record->user && $record->user->created_at
                                         ? $record->user->created_at->format('d/m/Y')
-                                        : 'N/A'),
+                                        : 'N/A')
+                                    ->visible(fn (Order $record): bool => !$record->is_guest),
                             ])
                             ->collapsible(),
 
@@ -369,9 +374,22 @@ class OrderResource extends Resource
                     ->label('Mã')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('user.name')
+                Tables\Columns\TextColumn::make('customer_name')
                     ->label('Khách hàng')
-                    ->searchable(),
+                    ->getStateUsing(function ($record) {
+                        if ($record->is_guest) {
+                            return $record->name . ' (Khách)';
+                        }
+
+                        return $record->user ? $record->user->name : 'N/A';
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhereHas('user', function (Builder $query) use ($search) {
+                                $query->where('name', 'like', "%{$search}%");
+                            });
+                    }),
 
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Tổng tiền')
@@ -576,25 +594,48 @@ class OrderResource extends Resource
     {
         $record = $form->getRecord();
 
-        if ($record->isDirty('status')) {
-            $previousStatus = $record->getOriginal('status');
-            $record->user->notify(new OrderStatusUpdatedNotification($record, $previousStatus));
+        // Kiểm tra xem đơn hàng có phải là của khách không đăng nhập không
+        if ($record->is_guest || !$record->user) {
+            // Nếu là đơn hàng của khách không đăng nhập, chỉ lưu lịch sử mà không gửi thông báo
+            if ($record->isDirty('status')) {
+                $previousStatus = $record->getOriginal('status');
 
-            // Lưu lịch sử cập nhật
-            $record->histories()->create([
-                'status' => $record->status,
-                'note' => 'Trạng thái đơn hàng đã được cập nhật từ "' . $previousStatus . '" sang "' . $record->status . '".',
-            ]);
-        }
+                // Lưu lịch sử cập nhật
+                $record->histories()->create([
+                    'status' => $record->status,
+                    'note' => 'Trạng thái đơn hàng đã được cập nhật từ "' . $previousStatus . '" sang "' . $record->status . '".',
+                ]);
+            }
 
-        if ($record->isDirty('payment_status') && $record->payment_status === 'paid') {
-            $record->user->notify(new PaymentConfirmedNotification($record));
+            if ($record->isDirty('payment_status') && $record->payment_status === 'paid') {
+                // Lưu lịch sử thanh toán
+                $record->histories()->create([
+                    'status' => 'payment_confirmed',
+                    'note' => 'Thanh toán đã được xác nhận.',
+                ]);
+            }
+        } else {
+            // Xử lý cho đơn hàng của người dùng đã đăng nhập
+            if ($record->isDirty('status')) {
+                $previousStatus = $record->getOriginal('status');
+                $record->user->notify(new OrderStatusUpdatedNotification($record, $previousStatus));
 
-            // Lưu lịch sử thanh toán
-            $record->histories()->create([
-                'status' => 'payment_confirmed',
-                'note' => 'Thanh toán đã được xác nhận.',
-            ]);
+                // Lưu lịch sử cập nhật
+                $record->histories()->create([
+                    'status' => $record->status,
+                    'note' => 'Trạng thái đơn hàng đã được cập nhật từ "' . $previousStatus . '" sang "' . $record->status . '".',
+                ]);
+            }
+
+            if ($record->isDirty('payment_status') && $record->payment_status === 'paid') {
+                $record->user->notify(new PaymentConfirmedNotification($record));
+
+                // Lưu lịch sử thanh toán
+                $record->histories()->create([
+                    'status' => 'payment_confirmed',
+                    'note' => 'Thanh toán đã được xác nhận.',
+                ]);
+            }
         }
     }
 

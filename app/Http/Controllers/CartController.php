@@ -84,8 +84,36 @@ class CartController extends Controller
         return back()->with('success', 'Product removed from cart successfully.');
     }
 
-    public function checkout()
+    public function checkout(CartService $cartService)
     {
+        // Kiểm tra giỏ hàng có trống không
+        if ($cartService->getTotalQuantity() === 0) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Giỏ hàng của bạn đang trống');
+        }
 
+        // Kiểm tra tồn kho
+        $stockCheck = $cartService->canCheckout();
+        if ($stockCheck !== true) {
+            // Tạo thông báo lỗi
+            $errorMessages = collect($stockCheck)->map(function($item) {
+                return "{$item['title']}: Yêu cầu {$item['requested']}, hiện có {$item['available']}";
+            })->join(', ');
+
+            return redirect()->route('cart.index')
+                ->with('error', 'Một số sản phẩm không đủ số lượng: ' . $errorMessages);
+        }
+
+        // Lưu trạng thái checkout trong session
+        session()->put('checkout_pending', true);
+
+        // Nếu user chưa đăng nhập, chuyển đến trang checkout dành cho khách
+        if (!auth()->check()) {
+            // Chuyển hướng đến guest checkout
+            return redirect()->route('checkout.guest');
+        }
+
+        // Nếu đã đăng nhập, chuyển đến trang checkout thông thường
+        return redirect()->route('checkout.index');
     }
 }

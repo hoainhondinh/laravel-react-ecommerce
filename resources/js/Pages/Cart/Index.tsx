@@ -14,13 +14,14 @@ function Index(
     totalPrice
   }: PageProps<{cartItems: Record<number, GroupedCartItems>}>) {
 
-  // Hàm chuyển hướng trực tiếp sang checkout
   const proceedToCheckout = (vendorId: number | null = null) => {
-    // Nếu có vendorId, lưu vào query params
+    // Thay vì gọi trực tiếp router.get, chúng ta sẽ gửi POST request đến endpoint cart.checkout
     if (vendorId) {
-      router.get(route('checkout.index', { vendor_id: vendorId }));
+      // Nếu có vendorId, sử dụng đường dẫn riêng cho từng vendor
+      router.post(route('cart.checkout', { vendor_id: vendorId }));
     } else {
-      router.get(route('checkout.index'));
+      // Nếu không có vendorId, gọi route cart.checkout bình thường
+      router.post(route('cart.checkout'));
     }
   };
 

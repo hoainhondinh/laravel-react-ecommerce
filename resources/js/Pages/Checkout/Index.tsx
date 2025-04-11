@@ -1,3 +1,4 @@
+// Cập nhật hàm submit và xử lý khác biệt cho guest và user đã đăng nhập
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { PageProps, GroupedCartItems } from '@/types';
@@ -7,10 +8,18 @@ import FlashMessages from '@/Components/Core/FlashMessages';
 
 export default function Index({
                                 cartItems,
-                                totalPrice
+                                totalPrice,
+                                isGuest, // Thêm prop isGuest
+                                guestInfo // Thêm prop guestInfo
                               }: PageProps<{
   cartItems: Record<number, GroupedCartItems>;
   totalPrice: number;
+  isGuest: boolean;
+  guestInfo?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
 }>) {
   const { data, setData, post, processing, errors } = useForm({
     name: '',
@@ -19,6 +28,7 @@ export default function Index({
     address: '',
     payment_method: 'cod'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Client-side validation state
   const [clientErrors, setClientErrors] = useState({
@@ -29,23 +39,36 @@ export default function Index({
     payment_method: ''
   });
 
-  // Pre-populate form with user data if available
+  // Pre-populate form với dữ liệu guest hoặc user tùy theo trạng thái
   useEffect(() => {
-    if (window.auth && window.auth.user) {
+    console.log('Setting initial form data. IsGuest:', isGuest);
+    console.log('Guest info available:', guestInfo);
+
+    if (isGuest && guestInfo) {
+      console.log('Populating form with guest info:', guestInfo);
+      setData(prevState => ({
+        ...prevState,
+        name: guestInfo.name || '',
+        email: guestInfo.email || '',
+        phone: guestInfo.phone || ''
+      }));
+    } else if (window.auth?.user) {
+      console.log('Populating form with user info');
       const user = window.auth.user;
-      setData(prevData => ({
-        ...prevData,
-        name: user.name || prevData.name,
-        email: user.email || prevData.email,
-        phone: user.phone || prevData.phone,
-        address: user.address || prevData.address
+      setData(prevState => ({
+        ...prevState,
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || ''
       }));
     }
-  }, []);
+  }, [isGuest, guestInfo]);
 
-  // Validate a single field
+  // Validate và các hàm xử lý (giữ nguyên)
   const validateField = (name: string, value: string) => {
     let error = '';
+
 
     switch (name) {
       case 'name':
@@ -67,52 +90,167 @@ export default function Index({
         break;
     }
 
+
     // Update error state for this field
     setClientErrors(prev => ({ ...prev, [name]: error }));
     return error === '';
   };
 
-  // Handle input change with validation
+
+// Handle input change with validation
   const handleChange = (name: string, value: string) => {
     setData(name, value);
     validateField(name, value);
   };
 
-  // Validate all fields before submission
+
+// Validate all fields before submission
   const validateForm = () => {
     const fields = ['name', 'email', 'phone', 'address'];
     let isValid = true;
+
 
     fields.forEach(field => {
       const fieldIsValid = validateField(field, data[field as keyof typeof data] as string);
       if (!fieldIsValid) isValid = false;
     });
 
+
     return isValid;
   };
 
+// Display either client-side or server-side error
+  const getErrorMessage = (field: string) => {
+    return errors[field] || clientErrors[field as keyof typeof clientErrors];
+    }
+  // Hàm submit cải tiến
   function submit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Only submit if client-side validation passes
+    console.log('Form submitting with data:', data);
+    console.log('User type:', isGuest ? 'Guest' : 'Authenticated');
+
     if (validateForm()) {
-      post(route('checkout.store'));
+      // Hiển thị trạng thái loading
+      setIsSubmitting(true);
+
+      post(route('checkout.store'), {
+        // Quan trọng: Không giữ trạng thái để cho phép redirect đầy đủ
+        preserveState: false,
+        preserveScroll: false,
+
+        onSuccess: (page) => {
+          console.log('Checkout success, page:', page);
+
+          // Đối với guest checkout, thêm xử lý thủ công nếu cần
+          if (isGuest && page.component === 'Checkout/Index') {
+            console.log('Still on checkout page after guest checkout, manual redirect needed');
+
+            // Tìm order_id từ response
+            const orderId =
+              page.props?.order_id ||
+              page.props?.flash?.order_id;
+
+            if (orderId) {
+              console.log('Found order ID, redirecting manually:', orderId);
+              // Chuyển hướng thủ công
+              window.location.href = route('checkout.confirmation', orderId);
+            } else {
+              // Nếu không tìm thấy order_id, tải lại trang
+              console.log('No order ID found, reloading page');
+              window.location.reload();
+            }
+          }
+          // Nếu không, Inertia sẽ tự động xử lý chuyển hướng
+        },
+
+        onError: (errors) => {
+          console.error('Checkout errors:', errors);
+          setIsSubmitting(false);
+
+          // Hiển thị lỗi cho người dùng
+          const errorMessage = Object.values(errors).flat().join('\n');
+          if (errorMessage) {
+            alert('Vui lòng kiểm tra lại thông tin:\n' + errorMessage);
+          } else {
+            alert('Có lỗi xảy ra. Vui lòng thử lại sau.');
+          }
+        }
+      });
     }
   }
-
-  // Display either client-side or server-side error
-  const getErrorMessage = (field: string) => {
-    return errors[field] || clientErrors[field as keyof typeof clientErrors];
+  // Hiển thị khác nhau cho guest và user đã đăng nhập
+  const renderAccountInfo = () => {
+    if (isGuest) {
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+          <div className="flex items-start">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="font-medium text-blue-800">Đang thanh toán với tư cách khách</h3>
+              <p className="text-sm text-blue-600 mt-1">
+                Bạn có thể
+                <a href={route('login')} className="font-medium text-blue-700 hover:underline mx-1">đăng nhập</a>
+                hoặc
+                <a href={route('register')} className="font-medium text-blue-700 hover:underline mx-1">đăng ký</a>
+                tài khoản để quản lý đơn hàng dễ dàng hơn.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+          <div className="flex items-start">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <div>
+              <h3 className="font-medium text-green-800">Đang thanh toán với tài khoản của bạn</h3>
+              <p className="text-sm text-green-600 mt-1">
+                Đơn hàng sẽ được lưu vào lịch sử đơn hàng của bạn.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
   };
 
+  // Phần render form với các trường phân biệt xử lý
   return (
     <AuthenticatedLayout>
       <Head title="Thanh toán" />
       <FlashMessages />
 
       <div className="py-12">
+        {isGuest && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">Thanh toán với tư cách khách</h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>Bạn đang thanh toán với tư cách khách. Đơn hàng sẽ được xử lý và bạn sẽ nhận được email xác nhận.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <h1 className="text-2xl font-bold mb-4 text-neutral">Thanh toán</h1>
+
+          {/* Hiển thị thông tin tài khoản khác nhau cho guest/user */}
+          {renderAccountInfo()}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Thông tin giao hàng */}
@@ -129,6 +267,7 @@ export default function Index({
                     onChange={e => handleChange('name', e.target.value)}
                     onBlur={e => validateField('name', e.target.value)}
                     placeholder="Nhập họ tên người nhận hàng"
+                    readOnly={false} // Có thể thay đổi dựa trên trạng thái nếu cần
                   />
                   {getErrorMessage('name') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('name')}</div>}
                 </div>
@@ -142,6 +281,7 @@ export default function Index({
                     onChange={e => handleChange('email', e.target.value)}
                     onBlur={e => validateField('email', e.target.value)}
                     placeholder="example@gmail.com"
+                    readOnly={false} // Có thể thay đổi dựa trên trạng thái nếu cần
                   />
                   {getErrorMessage('email') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('email')}</div>}
                 </div>
@@ -211,10 +351,21 @@ export default function Index({
                 <div className="mt-6">
                   <button
                     type="submit"
-                    className="w-full btn btn-primary text-white"
-                    disabled={processing}
+                    className={`w-full btn btn-primary text-white ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                    disabled={processing || isSubmitting}
                   >
-                    {processing ? 'Đang xử lý...' : 'Đặt hàng'}
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+                             fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                  strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Đang xử lý...
+                      </div>
+                    ) : 'Đặt hàng'}
                   </button>
                 </div>
               </form>
@@ -248,7 +399,7 @@ export default function Index({
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-neutral line-clamp-2">{item.title}</p>
                                 <div className="text-sm text-gray-500 mt-1">
-                                  {item.options.length > 0 && (
+                                  {item.options && item.options.length > 0 && (
                                     <span>{item.options.map(opt => opt.name).join(', ')}</span>
                                   )}
                                 </div>

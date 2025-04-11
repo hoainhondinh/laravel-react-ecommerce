@@ -27,15 +27,26 @@ Route::get('/robots.txt', function () {
     $content = "User-agent: *\nAllow: /\nSitemap: " . url('/sitemap.xml');
     return response($content)->header('Content-Type', 'text/plain');
 });
-
+// Cart Routes - Mở cho tất cả người dùng
 Route::controller(CartController::class)->group(function () {
     Route::get('/cart', 'index')->name('cart.index');
-    Route::post('/cart/add/{product}', 'store')
-        ->name('cart.store');
-    Route::put('/cart/{product}', 'update')
-        ->name('cart.update');
-    Route::delete('/cart/{product}', 'destroy')
-        ->name('cart.destroy');
+    Route::post('/cart/add/{product}', 'store')->name('cart.store');
+    Route::put('/cart/{product}', 'update')->name('cart.update');
+    Route::delete('/cart/{product}', 'destroy')->name('cart.destroy');
+    Route::post('/cart/checkout', 'checkout')->name('cart.checkout');
+});
+
+// Checkout Routes - Di chuyển ra khỏi middleware auth để hỗ trợ guest
+Route::controller(CheckoutController::class)->group(function () {
+    // Routes cho guest checkout
+    Route::get('/checkout/guest', 'guestCheckout')->name('checkout.guest');
+    Route::post('/checkout/guest', 'processGuestCheckout')->name('checkout.process-guest');
+
+    // Các routes checkout chung cho cả guest và user đã đăng nhập
+    Route::get('/checkout', 'index')->name('checkout.index');
+    Route::post('/checkout', 'store')->name('checkout.store');
+    Route::get('/checkout/confirmation/{order}', 'confirmation')->name('checkout.confirmation');
+    Route::get('/checkout/success/{order}', 'success')->name('checkout.success');
 });
 
 // Auth routes
@@ -45,19 +56,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::middleware(['verified'])->group(function () {
-        Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
-
-        // Checkout routes
-        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-        Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-        Route::get('/checkout/confirmation/{order}', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
-        Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
-
-        // Order routes
+        // Order routes - Cần đăng nhập
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 
+        // Payment routes - Cần đăng nhập
         Route::post('/orders/{order}/confirm-payment', [PaymentController::class, 'confirmPayment'])->name('payment.confirm');
         Route::post('/orders/{order}/regenerate-qr', [PaymentController::class, 'regenerateQR'])->name('payment.regenerate-qr');
 
@@ -67,8 +71,21 @@ Route::middleware('auth')->group(function () {
             ->name('products.adjust-inventory');
         Route::post('/products/{product}/variations/{variation}/adjust-inventory', [ProductController::class, 'adjustVariationInventory'])
             ->name('products.adjust-variation-inventory');
-
     });
+});
+
+// Guest Order Routes - Cho phép guest truy cập đơn hàng của họ với middleware
+Route::middleware(['guest.order'])->group(function () {
+    Route::get('/guest/orders/{order}', [OrderController::class, 'guestOrderShow'])
+        ->name('guest.orders.show');
+    Route::post('/guest/orders/{order}/cancel', [OrderController::class, 'guestOrderCancel'])
+        ->name('guest.orders.cancel');
+
+    // Chức năng thanh toán cho đơn hàng guest
+    Route::post('/guest/orders/{order}/confirm-payment', [PaymentController::class, 'guestConfirmPayment'])
+        ->name('guest.payment.confirm');
+    Route::post('/guest/orders/{order}/regenerate-qr', [PaymentController::class, 'guestRegenerateQR'])
+        ->name('guest.payment.regenerate-qr');
 });
 
 require __DIR__.'/auth.php';
