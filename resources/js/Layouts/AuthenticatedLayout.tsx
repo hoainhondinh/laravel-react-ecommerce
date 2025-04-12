@@ -5,6 +5,7 @@ import ResponsiveNavLink from '@/Components/Core/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { PropsWithChildren, ReactNode, useState, useEffect } from 'react';
 import Navbar from '@/Components/App/Navbar';
+import ContactButtons from "@/Components/Core/ContactButtons";
 
 export default function AuthenticatedLayout({
                                               header,
@@ -41,6 +42,8 @@ export default function AuthenticatedLayout({
       )}
 
       <main>{children}</main>
+
+      <ContactButtons position="right" />
 
       <footer className="bg-[#4E3629] text-white py-8">
         <div className="container mx-auto px-4">
