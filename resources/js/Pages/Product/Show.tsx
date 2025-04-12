@@ -159,6 +159,12 @@ function Show({product, variationOptions}: {
       return;
     }
 
+    // Kiểm tra số lượng tối thiểu
+    if (form.data.quantity <= 0) {
+      toast.error('Số lượng sản phẩm phải lớn hơn 0');
+      return;
+    }
+
     // Nếu đã chọn đủ biến thể, tiến hành thêm vào giỏ hàng
     form.post(route('cart.store', product.id), {
       preserveScroll: true,
@@ -166,9 +172,14 @@ function Show({product, variationOptions}: {
       onSuccess: () => {
         toast.success('Đã thêm sản phẩm vào giỏ hàng');
       },
-      onError: (err) => {
-        console.log(err);
-        toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng');
+      onError: (errors) => {
+        if (errors.quantity) {
+          toast.error(errors.quantity);
+        } else if (errors.error) {
+          toast.error(errors.error);
+        } else {
+          toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng');
+        }
       }
     });
   }

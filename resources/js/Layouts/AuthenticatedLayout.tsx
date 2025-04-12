@@ -6,6 +6,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { PropsWithChildren, ReactNode, useState, useEffect } from 'react';
 import Navbar from '@/Components/App/Navbar';
 import ContactButtons from "@/Components/Core/ContactButtons";
+import {Toaster} from "react-hot-toast";
 
 export default function AuthenticatedLayout({
                                               header,
@@ -32,7 +33,31 @@ export default function AuthenticatedLayout({
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#FFFFFF',
+            color: '#4E3629',
+            border: '1px solid #D8C8A4',
+            padding: '16px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          },
+          success: {
+            iconTheme: {
+              primary: '#9E7A47',
+              secondary: '#FFFFFF',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#F87272',
+              secondary: '#FFFFFF',
+            },
+          }
+        }}
+      />      <Navbar />
       {header && (
         <header className="bg-white shadow border-b border-[#D8C8A4]">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\CartService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
-use Symfony\Component\HttpFoundation\Request;
 
 class CartController extends Controller
 {
@@ -16,6 +17,8 @@ class CartController extends Controller
     {
         return Inertia::render('Cart/Index', [
             'cartItems' => $cartService->getCartItemsGrouped(),
+            'totalQuantity' => $cartService->getTotalQuantity(),
+            'totalPrice' => $cartService->getTotalPrice(),
         ]);
     }
 
@@ -31,29 +34,19 @@ class CartController extends Controller
             'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        $cartService->addItemToCart(
-            $product,
-            $data['quantity'],
-            $data['option_ids'] ?: []
-        );
+        try {
+            $cartService->addItemToCart(
+                $product,
+                $data['quantity'],
+                $data['option_ids'] ?: []
+            );
 
-        return back()->with('success', 'Product added to cart successfully.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
+            return back()->with('success', 'Sản phẩm đã được thêm vào giỏ hàng thành công.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.']);
+        }
     }
 
     /**
@@ -61,15 +54,34 @@ class CartController extends Controller
      */
     public function update(Request $request, Product $product, CartService $cartService)
     {
-        $request->validate([
-            'quantity' => ['integer','min:1'],
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'quantity' => ['required', 'integer', 'min:1'],
+            'option_ids' => ['nullable', 'array'],
         ]);
-        $optionIds = $request->input('option_ids') ?: []; //Get the option IDs
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator);
+        }
+
+        $optionIds = $request->input('option_ids') ?: []; // Get the option IDs
         $quantity = $request->input('quantity'); // Get the new quantity
 
-        $cartService->updateItemQuantity($product->id, $quantity, $optionIds);
+        try {
+            // Kiểm tra tồn kho trước khi cập nhật
+            if (!$product->hasStock($quantity, $optionIds)) {
+                $availableQuantity = $product->getAvailableQuantity($optionIds);
+                return back()->withErrors([
+                    'quantity' => "Chỉ còn {$availableQuantity} sản phẩm trong kho"
+                ]);
+            }
 
-        return back()->with('success', 'Product quantity updated successfully.');
+            $cartService->updateItemQuantity($product->id, $quantity, $optionIds);
+
+            return back()->with('success', 'Số lượng sản phẩm đã được cập nhật thành công.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi cập nhật giỏ hàng.']);
+        }
     }
 
     /**
@@ -77,19 +89,23 @@ class CartController extends Controller
      */
     public function destroy(Request $request, Product $product, CartService $cartService)
     {
-        $optionIds = $request->input('option_ids');
+        $optionIds = $request->input('option_ids', []);
 
-        $cartService->removeItemFromCart($product->id, $optionIds);
+        try {
+            $cartService->removeItemFromCart($product->id, $optionIds);
 
-        return back()->with('success', 'Product removed from cart successfully.');
+            return back()->with('success', 'Sản phẩm đã được xóa khỏi giỏ hàng.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi xóa sản phẩm khỏi giỏ hàng.']);
+        }
     }
 
-    public function checkout(CartService $cartService)
+    public function checkout(Request $request, CartService $cartService)
     {
         // Kiểm tra giỏ hàng có trống không
         if ($cartService->getTotalQuantity() === 0) {
             return redirect()->route('cart.index')
-                ->with('error', 'Giỏ hàng của bạn đang trống');
+                ->withErrors(['error' => 'Giỏ hàng của bạn đang trống']);
         }
 
         // Kiểm tra tồn kho
@@ -101,7 +117,7 @@ class CartController extends Controller
             })->join(', ');
 
             return redirect()->route('cart.index')
-                ->with('error', 'Một số sản phẩm không đủ số lượng: ' . $errorMessages);
+                ->withErrors(['error' => 'Một số sản phẩm không đủ số lượng: ' . $errorMessages]);
         }
 
         // Lưu trạng thái checkout trong session

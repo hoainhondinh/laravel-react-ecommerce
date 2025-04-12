@@ -1,27 +1,74 @@
 import {GroupedCartItems, PageProps} from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {Head, Link, router} from "@inertiajs/react";
+import {Head, Link, router, useForm} from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import PrimaryButton from "@/Components/Core/PrimaryButton";
 import {CreditCardIcon} from "@heroicons/react/24/outline";
 import CartItem from "@/Components/App/CartItem";
+import React, {useEffect, useState} from "react";
+import toast from "react-hot-toast";
 
 function Index(
   {
     csrf_token,
     cartItems,
-    totalQuantity,
-    totalPrice
+    totalQuantity: initialTotalQuantity,
+    totalPrice: initialTotalPrice
   }: PageProps<{cartItems: Record<number, GroupedCartItems>}>) {
 
+  // State để theo dõi số lượng và giá trị của giỏ hàng
+  const [totalQuantity, setTotalQuantity] = useState(initialTotalQuantity);
+  const [totalPrice, setTotalPrice] = useState(initialTotalPrice);
+
+  // Cập nhật state khi cartItems thay đổi
+  useEffect(() => {
+    // Tính toán lại tổng số lượng và tổng giá trị
+    let newTotalQuantity = 0;
+    let newTotalPrice = 0;
+
+    Object.values(cartItems).forEach(cartItem => {
+      cartItem.items.forEach(item => {
+        newTotalQuantity += item.quantity;
+        newTotalPrice += item.price * item.quantity;
+      });
+    });
+
+    setTotalQuantity(newTotalQuantity);
+    setTotalPrice(newTotalPrice);
+  }, [cartItems]);
+
   const proceedToCheckout = (vendorId: number | null = null) => {
+    // Kiểm tra nếu giỏ hàng trống
+    if (totalQuantity === 0) {
+      toast.error('Giỏ hàng của bạn đang trống');
+      return;
+    }
+
     // Thay vì gọi trực tiếp router.get, chúng ta sẽ gửi POST request đến endpoint cart.checkout
     if (vendorId) {
       // Nếu có vendorId, sử dụng đường dẫn riêng cho từng vendor
-      router.post(route('cart.checkout', { vendor_id: vendorId }));
+      router.post(route('cart.checkout', { vendor_id: vendorId }), {}, {
+        onError: (errors) => {
+          // Hiển thị lỗi từ máy chủ (ví dụ: sản phẩm hết hàng)
+          if (errors.error) {
+            toast.error(errors.error);
+          } else {
+            toast.error('Có lỗi xảy ra khi tiến hành thanh toán');
+          }
+        }
+      });
     } else {
       // Nếu không có vendorId, gọi route cart.checkout bình thường
-      router.post(route('cart.checkout'));
+      router.post(route('cart.checkout'), {}, {
+        onError: (errors) => {
+          // Hiển thị lỗi từ máy chủ (ví dụ: sản phẩm hết hàng)
+          if (errors.error) {
+            toast.error(errors.error);
+          } else {
+            toast.error('Có lỗi xảy ra khi tiến hành thanh toán');
+          }
+        }
+      });
     }
   };
 

@@ -204,18 +204,25 @@ class CartService
     {
         $userId = Auth::id();
 
+        // Kiểm tra xem sản phẩm có tồn tại trong giỏ hàng không
         $cartItem = CartItem::where('user_id', $userId)
             ->where('product_id', $productId)
             ->where('variation_type_option_ids', json_encode($optionIds))
             ->first();
 
         if ($cartItem) {
+            // Cập nhật số lượng
             $cartItem->update([
                 'quantity' => $quantity,
             ]);
+
+            // Xóa cache để buộc tính toán lại tổng giá trị
+            $this->cachedCartItems = null;
+        } else {
+            // Trường hợp không tìm thấy sản phẩm, có thể log hoặc ném ngoại lệ
+            Log::warning("Không tìm thấy sản phẩm ID {$productId} với tùy chọn " . json_encode($optionIds) . " trong giỏ hàng của user {$userId}");
         }
-    }
-    /**
+    }    /**
      * Kiểm tra số lượng tồn kho cho tất cả các sản phẩm trong giỏ hàng
      *
      * @return array Danh sách các sản phẩm không đủ số lượng
@@ -263,15 +270,21 @@ class CartService
 
         ksort($optionIds);
 
-        //Use a unique key based on product ID and option IDs
-        $itemKey = $productId . '_' . json_encode($optionIds);
+        // Sử dụng khóa duy nhất dựa trên ID sản phẩm và ID tùy chọn
+        $itemKey = $productId . '-' . json_encode($optionIds);
 
         if (isset($cartItems[$itemKey])) {
             $cartItems[$itemKey]['quantity'] = $quantity;
-        }
 
-        //Save updated cart items back to the cookie
-        Cookie::queue(self::COOKIE_NAME, json_encode($cartItems), self::COOKIE_LIFETIME);
+            // Lưu lại giỏ hàng đã cập nhật vào cookie
+            Cookie::queue(self::COOKIE_NAME, json_encode($cartItems), self::COOKIE_LIFETIME);
+
+            // Xóa cache để buộc tính toán lại tổng giá trị
+            $this->cachedCartItems = null;
+        } else {
+            // Trường hợp không tìm thấy sản phẩm, có thể log hoặc ném ngoại lệ
+            Log::warning("Không tìm thấy sản phẩm ID {$productId} với tùy chọn " . json_encode($optionIds) . " trong giỏ hàng cookie");
+        }
     }
 
     protected function saveItemToDatabase(int $productId, int $quantity, $price, array $optionIds): void
