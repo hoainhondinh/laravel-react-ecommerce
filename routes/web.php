@@ -3,6 +3,7 @@
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
@@ -25,6 +26,10 @@ Route::prefix('blog')->name('blog.')->group(function () {
 // Support Pages
 Route::get('/ho-tro', [SupportPageController::class, 'index'])->name('support.index');
 Route::get('/ho-tro/{slug}', [SupportPageController::class, 'show'])->name('support.show');
+// Contact Routes
+Route::get('/lien-he', [ContactController::class, 'index'])->name('contact.index');
+Route::post('/lien-he', [ContactController::class, 'store'])->name('contact.store');
+Route::get('/lien-he/cam-on', [ContactController::class, 'success'])->name('contact.success');
 // Robots.txt
 Route::get('/robots.txt', function () {
     $content = "User-agent: *\nAllow: /\nSitemap: " . url('/sitemap.xml');
