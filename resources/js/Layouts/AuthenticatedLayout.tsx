@@ -74,10 +74,10 @@ export default function AuthenticatedLayout({
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold mb-4">CÔNG TY TNHH THƯƠNG MẠI</h3>
-              <p className="mb-1">Địa chỉ: 123 Nguyễn Văn A, Quận 1, TP.HCM</p>
-              <p className="mb-1">Điện thoại: 0123 456 789</p>
-              <p className="mb-4">Email: info@company.vn</p>
+              <h3 className="text-xl font-bold mb-4">Yến sào Xuân Mạnh</h3>
+              <p className="mb-1">Địa chỉ: 287 Trần Phú, Phường Bình Định, Thị Xã An Nhơn, Tỉnh Bình Định</p>
+              <p className="mb-1">Điện thoại: 0589 153 703</p>
+              <p className="mb-4">Email: yensaoxuanmanh@gmail.com</p>
 
               <div className="flex space-x-4">
                 <a href="#" className="text-white hover:text-[#D9C97E] transition">
@@ -106,8 +106,6 @@ export default function AuthenticatedLayout({
                           className="hover:text-[#D9C97E] transition">Chính sách bảo mật</Link></li>
                 <li><Link href={route('support.show', 'phuong-thuc-thanh-toan')}
                           className="hover:text-[#D9C97E] transition">Phương thức thanh toán</Link></li>
-                <li><Link href={route('support.index')} className="hover:text-[#D9C97E] transition">Xem tất cả</Link>
-                </li>
               </ul>
             </div>
 

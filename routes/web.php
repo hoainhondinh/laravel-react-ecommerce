@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
@@ -23,6 +24,8 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/tag/{slug}', [BlogController::class, 'tag'])->name('tag');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
+// About Routes
+Route::get('/about', [AboutController::class, 'index'])->name('about.index');
 // Support Pages
 Route::get('/ho-tro', [SupportPageController::class, 'index'])->name('support.index');
 Route::get('/ho-tro/{slug}', [SupportPageController::class, 'show'])->name('support.show');

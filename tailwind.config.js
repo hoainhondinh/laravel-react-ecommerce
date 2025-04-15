@@ -12,7 +12,16 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+              sans: [
+                '"SF Pro Text"',
+                '"SF Pro Display"',
+                '"Myriad Set Pro"',
+                '"SF Pro Icons"',
+                '"Helvetica Neue"',
+                'Helvetica',
+                'Arial',
+                'sans-serif'
+              ],
             },
           colors: {
             // Custom theme colors

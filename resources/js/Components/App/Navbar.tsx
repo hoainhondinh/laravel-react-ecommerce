@@ -45,7 +45,13 @@ const Navbar: React.FC<NavbarProps> = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Determine if a path is active
-  const isActive = (path: string): boolean => url.startsWith(path);
+  const isActive = (path: string): boolean => {
+    if (path === '/') {
+      // Chỉ trả về true cho trang chủ nếu URL chính xác là "/" hoặc có tham số query
+      return url === '/' || (url.startsWith('/') && url.indexOf('/', 1) === -1 && !url.startsWith('/about') && !url.startsWith('/products') && !url.startsWith('/blog') && !url.startsWith('/lien-he') && !url.startsWith('/department/'));
+    }
+    return url.startsWith(path);
+  };
 
   // Handle click outside to close menus
   useEffect(() => {
@@ -132,9 +138,9 @@ const Navbar: React.FC<NavbarProps> = () => {
               </Link>
 
               <Link
-                href="/gioi-thieu"
+                href="/about"
                 className={`py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
-                  isActive('/gioi-thieu') ? 'text-[#9E7A47] font-medium' : ''
+                  isActive('/about') ? 'text-[#9E7A47] font-medium' : ''
                 }`}
               >
                 GIỚI THIỆU
@@ -387,9 +393,9 @@ const Navbar: React.FC<NavbarProps> = () => {
                 </Link>
 
                 <Link
-                  href="/gioi-thieu"
+                  href="/about"
                   className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
-                    isActive('/gioi-thieu') ? 'text-[#9E7A47] font-medium' : ''
+                    isActive('/about') ? 'text-[#9E7A47] font-medium' : ''
                   }`}
                 >
                   GIỚI THIỆU

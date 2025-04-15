@@ -196,7 +196,7 @@ const Home: React.FC<HomeProps> = ({
             <div className="md:w-1/2 pr-0 md:pr-12 mb-8 md:mb-0">
               <h2 className="text-2xl font-bold mb-6 text-[#4E3629]">TẠI SAO NÊN CHỌN CHÚNG TÔI?</h2>
               <p className="text-[#333333] mb-6">
-                YẾN SÀI GÒN - Không tổng hợp nguyên liệu - kinh doanh không ép tổ, không phẩm giả trộn thạch đường,
+                YẾN SÀO XUÂN MẠNH - Không tổng hợp nguyên liệu - kinh doanh không ép tổ, không phẩm giả trộn thạch đường,
                 không tạo tổ ép bằng máy. Chúng tôi đảm bảo 100%
                 sản phẩm là đến từ Cung cấp độc quyền trên vùng núi
                 Thạch Yến, trải qua đủ mượt đến những sản phẩm
@@ -249,33 +249,33 @@ const Home: React.FC<HomeProps> = ({
       </section>
 
       {/* Business Hours Section */}
-      <section className="py-12 bg-[#4E3629] text-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-8 md:mb-0">
-              <h2 className="text-2xl font-bold mb-4">THỜI GIAN HOẠT ĐỘNG</h2>
-              <p className="mb-6">Để lựa chọn sản phẩm phù hợp với nhu cầu, quý khách có thể đến trực tiếp cửa hàng hoặc liên hệ qua:</p>
+      {/*<section className="py-12 bg-[#4E3629] text-white">*/}
+      {/*  <div className="max-w-6xl mx-auto px-4">*/}
+      {/*    <div className="flex flex-col md:flex-row items-center">*/}
+      {/*      <div className="md:w-1/2 mb-8 md:mb-0">*/}
+      {/*        <h2 className="text-2xl font-bold mb-4">THỜI GIAN HOẠT ĐỘNG</h2>*/}
+      {/*        <p className="mb-6">Để lựa chọn sản phẩm phù hợp với nhu cầu, quý khách có thể đến trực tiếp cửa hàng hoặc liên hệ qua:</p>*/}
 
-              <div className="mb-4">
-                <h3 className="font-bold">Thứ 2 - Chủ nhật</h3>
-                <p>8:00 AM - 21:30 PM</p>
-              </div>
+      {/*        <div className="mb-4">*/}
+      {/*          <h3 className="font-bold">Thứ 2 - Chủ nhật</h3>*/}
+      {/*          <p>8:00 AM - 21:30 PM</p>*/}
+      {/*        </div>*/}
 
-              <button className="bg-white text-[#4E3629] px-6 py-3 rounded-md font-medium hover:bg-[#D8C8A4] transition-colors">
-                Xem thêm
-              </button>
-            </div>
+      {/*        <button className="bg-white text-[#4E3629] px-6 py-3 rounded-md font-medium hover:bg-[#D8C8A4] transition-colors">*/}
+      {/*          Xem thêm*/}
+      {/*        </button>*/}
+      {/*      </div>*/}
 
-            <div className="md:w-1/2">
-              <img
-                src="/images/yen-chung.jpg"
-                alt="Yến Chưng"
-                className="w-full h-auto rounded-lg border border-[#9E7A47]"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/*      <div className="md:w-1/2">*/}
+      {/*        <img*/}
+      {/*          src="/images/yen-chung.jpg"*/}
+      {/*          alt="Yến Chưng"*/}
+      {/*          className="w-full h-auto rounded-lg border border-[#9E7A47]"*/}
+      {/*        />*/}
+      {/*      </div>*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*</section>*/}
 
       {/* Blog Section */}
       <section className="py-12 bg-white">
