@@ -7,6 +7,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SupportPageController;
 use Illuminate\Support\Facades\Route;
 
 // Guest Routes
@@ -21,7 +22,9 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/tag/{slug}', [BlogController::class, 'tag'])->name('tag');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
-
+// Support Pages
+Route::get('/ho-tro', [SupportPageController::class, 'index'])->name('support.index');
+Route::get('/ho-tro/{slug}', [SupportPageController::class, 'show'])->name('support.show');
 // Robots.txt
 Route::get('/robots.txt', function () {
     $content = "User-agent: *\nAllow: /\nSitemap: " . url('/sitemap.xml');
