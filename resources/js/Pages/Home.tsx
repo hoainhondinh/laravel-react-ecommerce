@@ -316,7 +316,13 @@ const Home: React.FC<HomeProps> = ({
                       <p className="text-[#333333] mb-4 line-clamp-3">{post.excerpt}</p>
                     )}
                     <div className="flex justify-between items-center text-sm text-gray-500">
-                      <span>{post.author?.name || 'Admin'}</span>
+                      <span>
+                        {new Date(post.published_at).toLocaleDateString('vi-VN', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
+                      </span>
                       <Link
                         href={`/blog/${post.slug}`}
                         className="text-[#9E7A47] font-medium hover:underline"

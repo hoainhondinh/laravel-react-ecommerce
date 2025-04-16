@@ -90,20 +90,20 @@ function Index(
                 )}
                 {Object.values(cartItems).map(cartItem => (
                   <div key={cartItem.user.id} className="mb-8">
-                    <div className="flex items-center justify-between pb-4 border-b border-[#D8C8A4] mb-4">
-                      <Link href="/public" className="text-[#9E7A47] hover:underline font-medium">
-                        {cartItem.user.name}
-                      </Link>
-                      <div>
-                        <button
-                          onClick={() => proceedToCheckout(cartItem.user.id)}
-                          className="flex items-center px-4 py-2 bg-white border border-[#9E7A47] text-[#9E7A47] rounded hover:bg-[#D8C8A4]/10 transition-colors"
-                        >
-                          <CreditCardIcon className="h-5 w-5 mr-2"/>
-                          Thanh toán riêng
-                        </button>
-                      </div>
-                    </div>
+                    {/*<div className="flex items-center justify-between pb-4 border-b border-[#D8C8A4] mb-4">*/}
+                    {/*  <Link href="/public" className="text-[#9E7A47] hover:underline font-medium">*/}
+                    {/*    {cartItem.user.name}*/}
+                    {/*  </Link>*/}
+                    {/*  <div>*/}
+                    {/*    <button*/}
+                    {/*      onClick={() => proceedToCheckout(cartItem.user.id)}*/}
+                    {/*      className="flex items-center px-4 py-2 bg-white border border-[#9E7A47] text-[#9E7A47] rounded hover:bg-[#D8C8A4]/10 transition-colors"*/}
+                    {/*    >*/}
+                    {/*      <CreditCardIcon className="h-5 w-5 mr-2"/>*/}
+                    {/*      Thanh toán riêng*/}
+                    {/*    </button>*/}
+                    {/*  </div>*/}
+                    {/*</div>*/}
                     {cartItem.items.map(item => (
                       <CartItem item={item} key={item.id}/>
                     ))}

@@ -39,7 +39,7 @@ export type Product = {
   is_on_sale?: boolean; // Đang giảm giá hay không
   has_variations?: boolean; // Có biến thể hay không
   quantity: number;
-  sold_count?: number; // Số lượng đã bán
+  sold_count: number; // Số lượng đã bán
   image: string;
   images: Image[];
   short_description: string;
@@ -51,6 +51,7 @@ export type Product = {
   department: {
     id: number;
     name: string;
+    slug: string;
   };
   variationTypes: VariationType[],
   variations: Array<{
@@ -61,7 +62,7 @@ export type Product = {
     original_price?: number; // Giá gốc biến thể
     discount_percent?: number; // Phần trăm giảm giá biến thể
     is_on_sale?: boolean; // Biến thể đang giảm giá hay không
-    sold_count?: number; // Số lượng đã bán của biến thể
+    sold_count: number; // Số lượng đã bán của biến thể
   }>
 }
 export interface Department {
@@ -82,6 +83,7 @@ export type CartItem = {
   discount_percent?: number; // Phần trăm giảm giá
   is_on_sale?: boolean; // Đang giảm giá hay không
   quantity: number;
+  available_quantity: number;
   image: string;
   option_ids: Record<string, number>;
   options: VariationTypeOption[]
@@ -157,11 +159,12 @@ export interface BlogPost {
   excerpt?: string;
   content: string;
   featured_image?: string;
-  Category?: {
+  category?: {
     id: number;
     name: string;
+    slug: string;
   };
-  Author?: {
+  author?: {
     id: number;
     name: string;
   };
@@ -247,6 +250,21 @@ export interface OrderShowProps extends PageProps {
 
 export interface CheckoutNoticeProps {
   show: boolean;
+}
+export interface PaginatedData<T> extends PaginationProps<T> {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from?: number;
+  to?: number;
+  prev_page_url: string | null;
+  next_page_url: string | null;
+  links?: {
+    url: string | null;
+    label: string;
+    active: boolean;
+  }[];
 }
 // import { Config } from 'ziggy-js';
 //

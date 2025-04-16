@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import SoldProgressBar from "@/Components/App/SoldProgressBar";
 
 function Show({product, variationOptions}: {
-  product: Product, variationOptions: number[]
+  product: Product, variationOptions: Record<string, number>
 }) {
 
   // Form để xử lý thêm vào giỏ hàng
@@ -27,7 +27,7 @@ function Show({product, variationOptions}: {
 
   // Khởi tạo state cho các tùy chọn được chọn
   const [selectedOptions, setSelectedOptions] =
-    useState<Record<number, VariationTypeOption>>([]);
+    useState<Record<string, VariationTypeOption>>({});
 
   // Tính toán hình ảnh dựa trên tùy chọn được chọn
   const images = useMemo(() => {
@@ -49,7 +49,7 @@ function Show({product, variationOptions}: {
       if (arraysAreEqual(selectedOptionIds, optionIds)) {
         return {
           price: variation.price,
-          original_price: variation.original_price,
+          original_price: variation.original_price || product.original_price,
           is_on_sale: variation.is_on_sale,
           discount_percent: variation.discount_percent,
           quantity: variation.quantity === null ? Number.MAX_VALUE : variation.quantity,
@@ -71,7 +71,7 @@ function Show({product, variationOptions}: {
 
   // Khởi tạo các tùy chọn mặc định
   useEffect(() => {
-    const initialOptions = {};
+    const initialOptions: Record<string, VariationTypeOption> = {};
 
     product.variationTypes.forEach((type) => {
       // Nếu có variation options từ URL, sử dụng chúng
@@ -88,7 +88,7 @@ function Show({product, variationOptions}: {
       }
 
       if (matchedOption) {
-        initialOptions[type.id] = matchedOption;
+        initialOptions[type.id.toString()] = matchedOption;
       }
     });
 
@@ -96,7 +96,7 @@ function Show({product, variationOptions}: {
   }, []);
 
   // Chuyển đổi tùy chọn thành dạng map
-  const getOptionIdsMap = (newOptions:object) => {
+  const getOptionIdsMap = (newOptions: Record<string, VariationTypeOption>) => {
     return Object.fromEntries(
       Object.entries(newOptions).map(([a, b]) => [a, b.id])
     )
@@ -111,7 +111,7 @@ function Show({product, variationOptions}: {
     setSelectedOptions((prevSelectedOptions) => {
       const newOptions = {
         ...prevSelectedOptions,
-        [typeId]: option
+        [typeId.toString()]: option
       }
 
       if (updateRouter){
@@ -203,7 +203,7 @@ function Show({product, variationOptions}: {
                       src={option.images[0].thumb}
                       alt={option.name}
                       className={`w-[50px] border-2 ${
-                        selectedOptions[type.id]?.id === option.id
+                        selectedOptions[type.id.toString()]?.id === option.id
                           ? 'border-[#9E7A47]'
                           : 'border-transparent hover:border-[#D8C8A4]'
                       }`}
@@ -221,7 +221,7 @@ function Show({product, variationOptions}: {
                   key={option.id}
                   type="button"
                   className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    selectedOptions[type.id]?.id === option.id
+                    selectedOptions[type.id.toString()]?.id === option.id
                       ? 'bg-[#9E7A47] text-white'
                       : 'bg-white border border-[#D8C8A4] text-[#333333] hover:bg-[#D8C8A4]/10'
                   }`}
@@ -252,48 +252,58 @@ function Show({product, variationOptions}: {
 
     // Kiểm tra nếu sản phẩm hết hàng
     const isOutOfStock = computedProduct.quantity <= 0;
-
+    // Kiểm tra nếu đạt đến giới hạn 10 sản phẩm
+    const isMaxQuantity = form.data.quantity >= 10 && computedProduct.quantity > 10;
     return (
-      <div className="mb-8 flex flex-col sm:flex-row gap-4">
-        {/* Quantity input with plus/minus buttons */}
-        <div className={`flex items-center border border-[#D8C8A4] rounded-md overflow-hidden w-full sm:w-40 ${isOutOfStock ? 'opacity-50' : ''}`}>
-          <button
-            type="button"
-            onClick={decreaseQuantity}
-            disabled={form.data.quantity <= 1 || isOutOfStock}
-            className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-            </svg>
-          </button>
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 mb-2">
+          {/* Quantity input with plus/minus buttons */}
+          <div className={`flex items-center border border-[#D8C8A4] rounded-md overflow-hidden w-full sm:w-40 ${isOutOfStock ? 'opacity-50' : ''}`}>
+            <button
+              type="button"
+              onClick={decreaseQuantity}
+              disabled={form.data.quantity <= 1 || isOutOfStock}
+              className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+            </button>
 
-          <input
-            type="text"
-            value={form.data.quantity}
-            readOnly
-            className="w-full px-2 py-2 text-center bg-white text-[#333333] focus:outline-none"
-          />
+            <input
+              type="text"
+              value={form.data.quantity}
+              readOnly
+              className="w-full px-2 py-2 text-center bg-white text-[#333333] focus:outline-none"
+            />
+
+            <button
+              type="button"
+              onClick={increaseQuantity}
+              disabled={form.data.quantity >= Math.min(10, computedProduct.quantity) || isOutOfStock}
+              className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
 
           <button
-            type="button"
-            onClick={increaseQuantity}
-            disabled={form.data.quantity >= Math.min(10, computedProduct.quantity) || isOutOfStock}
-            className="px-3 py-2 bg-white text-[#4E3629] hover:bg-[#D8C8A4]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={addToCart}
+            disabled={isOutOfStock}
+            className={`px-4 py-2 ${isOutOfStock ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#9E7A47] hover:bg-[#4E3629]'} text-white rounded-md transition-colors flex-1`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
+            {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
           </button>
         </div>
 
-        <button
-          onClick={addToCart}
-          disabled={isOutOfStock}
-          className={`px-4 py-2 ${isOutOfStock ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#9E7A47] hover:bg-[#4E3629]'} text-white rounded-md transition-colors flex-1`}
-        >
-          {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
-        </button>
+        {/* Thông báo giới hạn số lượng */}
+        {isMaxQuantity && (
+          <div className="text-amber-600 text-sm mt-2 bg-amber-50 p-2 rounded-md border border-amber-200">
+            <span className="font-medium">Lưu ý:</span> Bạn chỉ có thể thanh toán cho tối đa 10 sản phẩm này trên mỗi đơn hàng.
+          </div>
+        )}
       </div>
     );
   };
@@ -301,7 +311,7 @@ function Show({product, variationOptions}: {
   // Cập nhật form khi thay đổi tùy chọn
   useEffect(() => {
     const idsMap = Object.fromEntries(
-      Object.entries(selectedOptions).map(([typeId, option]:[string, VariationTypeOption]) => [typeId, option.id])
+      Object.entries(selectedOptions).map(([typeId, option]) => [typeId, option.id])
     )
     form.setData('option_ids', idsMap)
   }, [selectedOptions]);
@@ -321,7 +331,9 @@ function Show({product, variationOptions}: {
                 {computedProduct.is_on_sale ? (
                   <div className="mb-4">
                     <div className="text-xl text-gray-500 line-through">
-                      <CurrencyFormatter amount={computedProduct.original_price}/>
+                      {computedProduct.original_price !== undefined && (
+                        <CurrencyFormatter amount={computedProduct.original_price}/>
+                      )}
                     </div>
                     <div className="flex items-center">
                       <span className="text-3xl font-semibold text-[#9E7A47] mr-3">

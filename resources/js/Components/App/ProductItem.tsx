@@ -2,9 +2,10 @@ import {Product} from "@/types";
 import {Link, router} from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import SoldProgressBar from '@/Components/App/SoldProgressBar';
+import React from "react";
 
 export default function ProductItem({product}: {product: Product }) {
-  const handleButtonClick = (e) => {
+  const handleButtonClick = (e:React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     router.visit(route('product.show', { product: product.slug }));
   }
@@ -35,20 +36,20 @@ export default function ProductItem({product}: {product: Product }) {
         </h2>
 
         {/* Author/Category line */}
-        <div className="flex items-center mb-3">
-          <span className="text-sm text-gray-600 mr-1">by</span>
-          <Link href="/" className="text-sm text-[#9E7A47] hover:underline mr-1">{product.user.name}</Link>
-          <span className="text-sm text-gray-600 mr-1">in</span>
-          <Link href="/" className="text-sm text-[#9E7A47] hover:underline">{product.department.name}</Link>
-        </div>
+        {/*<div className="flex items-center mb-3">*/}
+        {/*  <span className="text-sm text-gray-600 mr-1">by</span>*/}
+        {/*  <Link href="/" className="text-sm text-[#9E7A47] hover:underline mr-1">{product.user.name}</Link>*/}
+        {/*  <span className="text-sm text-gray-600 mr-1">in</span>*/}
+        {/*  <Link href="/" className="text-sm text-[#9E7A47] hover:underline">{product.department.name}</Link>*/}
+        {/*</div>*/}
 
         {/* Sold Progress Bar */}
         {product.sold_count > 0 && (
           <SoldProgressBar
             soldCount={product.sold_count}
             quantity={product.quantity}
-            showPercentage={false}
-            showMessage={false}
+            showPercentage={true}
+            showMessage={true}
             className="mb-3"
           />
         )}

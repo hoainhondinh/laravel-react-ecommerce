@@ -1,27 +1,36 @@
 import React, { useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { PageProps, PaginationProps, Product } from '@/types';
+import { PageProps, PaginationProps, Product, Department, ResourceResponse } from '@/types';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ProductItem from '@/Components/App/ProductItem';
 
+// Sử dụng kiểu trực tiếp thay vì tạo interface mới
 export default function Index({
                                 products,
                                 filters = {}
                               }: PageProps<{
-  products: PaginationProps<Product>;
+  products: PaginationProps<Product> & {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+  };
   filters?: { department?: string };
 }>) {
-  // Đúng: Gọi usePage() trong phần thân của function component
+  // Lấy thông tin page
   const page = usePage<PageProps>();
-  const { departments = [] } = page.props;
+  // Sử dụng đúng cấu trúc từ định nghĩa ResourceResponse
+  const departments: Department[] = page.props.departments?.data || [];
 
-  // Đúng: Sử dụng useEffect ở đây
+  // Sử dụng useEffect
   useEffect(() => {
     console.log('Page Props:', page.props);
     console.log('Departments:', departments);
   }, [page.props, departments]);
 
-  // Determine current department if filter is applied
+  // Xác định department hiện tại nếu có filter
   const currentDepartmentSlug = filters.department;
   const currentDepartment = departments.find(d => d.slug === currentDepartmentSlug);
 
@@ -38,50 +47,50 @@ export default function Index({
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar with department filters */}
-            <div className="lg:col-span-1">
-              <div className="bg-white p-4 border border-[#D8C8A4] rounded-md mb-6">
-                <h3 className="text-lg font-medium text-[#4E3629] mb-4 pb-2 border-b border-[#D8C8A4]">
-                  Danh mục sản phẩm
-                </h3>
-                <ul className="space-y-2">
-                  <li key="all-products">
-                    <Link
-                      href={route('products.index')}
-                      className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
-                        !currentDepartmentSlug ? 'text-[#9E7A47] font-medium' : ''
-                      }`}
-                      preserveScroll
-                    >
-                      Tất cả sản phẩm
-                    </Link>
-                  </li>
-                  {departments.map((department, index) => (
-                    department && department.id ? (
-                      <li key={`dept-${department.id}`}>
-                        <Link
-                          href={route('department.show', { department: department.slug })}
-                          className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
-                            currentDepartmentSlug === department.slug ? 'text-[#9E7A47] font-medium' : ''
-                          }`}
-                          preserveScroll
-                        >
-                          {department.name}
-                          <span className="text-gray-500 text-sm ml-1">
-                            ({department.products_count || 0})
-                          </span>
-                        </Link>
-                      </li>
-                    ) : null
-                  ))}
-                </ul>
-              </div>
-            </div>
+            {/*<div className="lg:col-span-1">*/}
+            {/*  <div className="bg-white p-4 border border-[#D8C8A4] rounded-md mb-6">*/}
+            {/*    <h3 className="text-lg font-medium text-[#4E3629] mb-4 pb-2 border-b border-[#D8C8A4]">*/}
+            {/*      Danh mục sản phẩm*/}
+            {/*    </h3>*/}
+            {/*    <ul className="space-y-2">*/}
+            {/*      <li key="all-products">*/}
+            {/*        <Link*/}
+            {/*          href={route('products.index')}*/}
+            {/*          className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${*/}
+            {/*            !currentDepartmentSlug ? 'text-[#9E7A47] font-medium' : ''*/}
+            {/*          }`}*/}
+            {/*          preserveScroll*/}
+            {/*        >*/}
+            {/*          Tất cả sản phẩm*/}
+            {/*        </Link>*/}
+            {/*      </li>*/}
+            {/*      {departments.map((department, index) => (*/}
+            {/*        department && department.id ? (*/}
+            {/*          <li key={`dept-${department.id}`}>*/}
+            {/*            <Link*/}
+            {/*              href={route('department.show', { department: department.slug })}*/}
+            {/*              className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${*/}
+            {/*                currentDepartmentSlug === department.slug ? 'text-[#9E7A47] font-medium' : ''*/}
+            {/*              }`}*/}
+            {/*              preserveScroll*/}
+            {/*            >*/}
+            {/*              {department.name}*/}
+            {/*              <span className="text-gray-500 text-sm ml-1">*/}
+            {/*                ({department.products_count || 0})*/}
+            {/*              </span>*/}
+            {/*            </Link>*/}
+            {/*          </li>*/}
+            {/*        ) : null*/}
+            {/*      ))}*/}
+            {/*    </ul>*/}
+            {/*  </div>*/}
+            {/*</div>*/}
 
             {/* Product grid */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-4">
               {products.data && products.data.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {products.data.map(product => (
                       <div
                         key={`product-${product.id}`}

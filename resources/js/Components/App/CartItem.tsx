@@ -14,6 +14,15 @@ function CartItem({item}: {item: CartItemType}) {
   const [error, setError] = useState('')
   const [quantity, setQuantity] = useState(item.quantity)
 
+  // Tính toán số lượng tối đa có thể đặt (lấy giá trị nhỏ hơn giữa 10 và số lượng tồn kho)
+  const maxQuantity = Math.min(10, item.available_quantity || Infinity)
+
+  // Kiểm tra xem đã đạt giới hạn tối đa chưa
+  const hasReachedMaxQuantity = quantity >= maxQuantity
+
+  // Kiểm tra xem giới hạn do tồn kho hay do quy định (10)
+  const isLimitedByStock = item.available_quantity && item.available_quantity < 10
+
   const onDeleteClick = () => {
     deleteForm.delete(route('cart.destroy', item.product_id), {
       preserveScroll: true,
@@ -32,7 +41,14 @@ function CartItem({item}: {item: CartItemType}) {
       return false;
     }
 
-    if (value > (item.available_quantity || 0)) {
+    // Kiểm tra giới hạn tối đa 10 sản phẩm
+    if (value > 10) {
+      setError('Chỉ được đặt tối đa 10 sản phẩm');
+      return false;
+    }
+
+    // Kiểm tra số lượng tồn kho
+    if (item.available_quantity && value > item.available_quantity) {
       setError(`Chỉ còn ${item.available_quantity} sản phẩm trong kho`);
       return false;
     }
@@ -98,10 +114,17 @@ function CartItem({item}: {item: CartItemType}) {
               ))}
             </div>
 
-            {/* Hiển thị thông tin tồn kho */}
-            {item.available_quantity !== undefined && item.available_quantity <= 10 && (
+            {/* Hiển thị thông tin tồn kho nếu dưới 10 */}
+            {isLimitedByStock && (
               <div className="mt-2 text-xs text-amber-600">
                 Còn {item.available_quantity} sản phẩm trong kho
+              </div>
+            )}
+
+            {/* Hiển thị thông báo đạt giới hạn số lượng */}
+            {hasReachedMaxQuantity && !isLimitedByStock && (
+              <div className="mt-2 text-xs text-amber-600">
+                Đã đạt số lượng tối đa (10) cho mỗi sản phẩm
               </div>
             )}
           </div>
@@ -114,7 +137,7 @@ function CartItem({item}: {item: CartItemType}) {
                   value={quantity}
                   onChange={handleQuantityInputChange}
                   onBlur={handleQuantityBlur}
-                  max={item.available_quantity || undefined}
+                  max={maxQuantity}
                   min={1}
                   className="input-sm w-16"
                 />
