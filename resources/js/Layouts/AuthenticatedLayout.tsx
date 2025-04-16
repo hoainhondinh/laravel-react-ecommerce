@@ -7,7 +7,7 @@ import { PropsWithChildren, ReactNode, useState, useEffect } from 'react';
 import Navbar from '@/Components/App/Navbar';
 import ContactButtons from "@/Components/Core/ContactButtons";
 import {Toaster} from "react-hot-toast";
-
+import ScrollToTop from "@/Components/Core/ScrollToTop";
 export default function AuthenticatedLayout({
                                               header,
                                               children,
@@ -69,6 +69,7 @@ export default function AuthenticatedLayout({
       <main>{children}</main>
 
       <ContactButtons position="right" />
+      <ScrollToTop position="right" bottom={320} showAfter={300} />
 
       <footer className="bg-[#4E3629] text-white py-8">
         <div className="container mx-auto px-4">
