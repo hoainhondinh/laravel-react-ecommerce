@@ -83,7 +83,7 @@ function Carousel({ images }: { images: Image[] }) {
         {/* Zoom Panel */}
         {showZoom && (
           <div
-            className="hidden lg:block absolute left-full top-0 ml-4 bg-white"
+            className="hidden lg:block absolute z-[9999] left-full top-0 ml-4 bg-white"
             style={{
               width: '500px',
               height: '500px',

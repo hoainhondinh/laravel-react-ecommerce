@@ -163,14 +163,6 @@ const Navbar: React.FC<NavbarProps> = () => {
                 {/* Desktop Products Dropdown */}
                 <div className="absolute left-0 mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="py-1">
-                    <Link
-                      href="/products"
-                      className={`block px-4 py-2 text-sm hover:bg-[#D8C8A4] ${
-                        url === '/products' ? 'text-[#9E7A47] font-medium' : 'text-[#333333]'
-                      }`}
-                    >
-                      Tất cả sản phẩm
-                    </Link>
 
                     {departmentsList.map((department) => (
                       <Link
@@ -422,14 +414,6 @@ const Navbar: React.FC<NavbarProps> = () => {
 
                   {productSubmenuOpen && (
                     <div className="mt-2 space-y-2 pl-4">
-                      <Link
-                        href="/products"
-                        className={`block py-2 text-[#333333] hover:text-[#9E7A47] transition-colors ${
-                          url === '/products' ? 'text-[#9E7A47] font-medium' : ''
-                        }`}
-                      >
-                        Tất cả sản phẩm
-                      </Link>
 
                       {departmentsList.map((department) => (
                         <Link

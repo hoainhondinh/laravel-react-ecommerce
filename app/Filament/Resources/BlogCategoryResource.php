@@ -8,10 +8,12 @@ use App\Models\BlogCategory;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class BlogCategoryResource extends Resource
@@ -71,11 +73,81 @@ class BlogCategoryResource extends Resource
                     ->tooltip('Delete this category')
                     ->modalHeading('Delete Category')
                     ->modalDescription('Are you sure you want to delete this category? This action cannot be undone.')
-                    ->modalSubmitActionLabel('Yes, delete it'),
+                    ->modalSubmitActionLabel('Yes, delete it')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Category deleted')
+                            ->body('The category has been deleted successfully.')
+                    )
+                    ->failureNotification(
+                        Notification::make()
+                            ->danger()
+                            ->title('Cannot delete category')
+                            ->body('This category cannot be deleted because it has associated posts.')
+                            ->persistent()
+                    )
+                    ->before(function (Tables\Actions\DeleteAction $action, BlogCategory $record) {
+                        // Kiểm tra xem danh mục có bài viết không
+                        $postsCount = $record->posts()->count();
+
+                        if ($postsCount > 0) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Không thể xóa danh mục')
+                                ->body("Danh mục này có {$postsCount} bài viết liên kết. Vui lòng xóa hoặc chuyển các bài viết trước.")
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
+                // Thêm nút để xem các bài viết liên kết
+                Tables\Actions\Action::make('view_posts')
+                    ->label('Xem bài viết')
+                    ->icon('heroicon-o-document-text')
+                    ->url(fn (BlogCategory $record) => route('filament.admin.resources.blog-posts.index', [
+                        'tableFilters[category][value]' => $record->id,
+                    ]))
+                    ->visible(fn (BlogCategory $record) => $record->posts()->count() > 0)
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function (Collection $records) {
+                            $canDelete = [];
+                            $cannotDelete = [];
+
+                            foreach ($records as $record) {
+                                if ($record->posts()->count() === 0) {
+                                    $canDelete[] = $record->id;
+                                } else {
+                                    $cannotDelete[] = $record->name;
+                                }
+                            }
+
+                            // Nếu có danh mục không thể xóa thì hiển thị thông báo
+                            if (!empty($cannotDelete)) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Một số danh mục không thể xóa')
+                                    ->body('Các danh mục sau có bài viết liên kết và không thể xóa: ' . implode(', ', $cannotDelete))
+                                    ->persistent()
+                                    ->send();
+                            }
+
+                            // Xóa các danh mục có thể xóa
+                            if (!empty($canDelete)) {
+                                BlogCategory::whereIn('id', $canDelete)->delete();
+
+                                Notification::make()
+                                    ->success()
+                                    ->title('Đã xóa danh mục')
+                                    ->body(count($canDelete) . ' danh mục đã được xóa thành công.')
+                                    ->send();
+                            }
+                        }),
                 ]),
             ]);
     }

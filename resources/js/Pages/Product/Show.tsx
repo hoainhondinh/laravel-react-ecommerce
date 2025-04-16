@@ -349,12 +349,12 @@ function Show({product, variationOptions}: {
                     <CurrencyFormatter amount={computedProduct.price}/>
                   </div>
                 )}
+                  <SoldProgressBar
+                    soldCount={computedProduct.sold_count || 0}
+                    quantity={computedProduct.quantity}
+                    className="my-4"
+                  />
 
-                <SoldProgressBar
-                  soldCount={computedProduct.sold_count || 0}
-                  quantity={computedProduct.quantity}
-                  className="my-4"
-                />
               </div>
 
               {renderProductVariationTypes()}

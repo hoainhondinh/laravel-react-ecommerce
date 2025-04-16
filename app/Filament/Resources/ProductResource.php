@@ -16,6 +16,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Resources\Pages\Page;
 use Filament\Resources\Resource;
@@ -25,6 +26,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 
 class ProductResource extends Resource
@@ -134,7 +136,11 @@ class ProductResource extends Resource
                 TextColumn::make('department.name'),
                 TextColumn::make('category.name'),
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->dateTime(),
+                TextColumn::make('variations_count')
+                    ->label('Biến thể')
+                    ->counts('variations')
+                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -144,10 +150,72 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation()
+                    ->tooltip('Xóa sản phẩm')
+                    ->modalHeading('Xóa sản phẩm')
+                    ->modalDescription('Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác.')
+                    ->modalSubmitActionLabel('Có, xóa nó')
+                    ->before(function (Tables\Actions\DeleteAction $action, Product $record) {
+                        // Kiểm tra xem sản phẩm có biến thể không
+                        $variationsCount = $record->variations()->count();
+
+                        if ($variationsCount > 0) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Không thể xóa sản phẩm')
+                                ->body("Sản phẩm này có {$variationsCount} biến thể. Vui lòng xóa các biến thể trước.")
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
+                // Thêm nút để xem các biến thể liên kết
+                Tables\Actions\Action::make('view_variations')
+                    ->label('Xem biến thể')
+                    ->tooltip('Xem các biến thể của sản phẩm này')
+                    ->icon('heroicon-o-view-columns')
+                    ->url(fn (Product $record) => ProductResource::getUrl('variations', ['record' => $record]))
+                    ->visible(fn (Product $record) => $record->variations()->count() > 0)
+                    ->color('secondary'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function (Collection $records) {
+                            $canDelete = [];
+                            $cannotDelete = [];
+
+                            foreach ($records as $record) {
+                                if ($record->variations()->count() === 0) {
+                                    $canDelete[] = $record->id;
+                                } else {
+                                    $cannotDelete[] = $record->title;
+                                }
+                            }
+
+                            // Nếu có sản phẩm không thể xóa thì hiển thị thông báo
+                            if (!empty($cannotDelete)) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Một số sản phẩm không thể xóa')
+                                    ->body('Các sản phẩm sau có biến thể liên kết và không thể xóa: ' . implode(', ', $cannotDelete))
+                                    ->persistent()
+                                    ->send();
+                            }
+
+                            // Xóa các sản phẩm có thể xóa
+                            if (!empty($canDelete)) {
+                                Product::whereIn('id', $canDelete)->delete();
+
+                                Notification::make()
+                                    ->success()
+                                    ->title('Đã xóa sản phẩm')
+                                    ->body(count($canDelete) . ' sản phẩm đã được xóa thành công.')
+                                    ->send();
+                            }
+                        }),
                 ]),
             ]);
     }

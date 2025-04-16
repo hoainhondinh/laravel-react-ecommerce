@@ -9,10 +9,12 @@ use App\Models\BlogTag;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class BlogTagResource extends Resource
@@ -69,11 +71,69 @@ class BlogTagResource extends Resource
                     ->tooltip('Delete this tag')
                     ->modalHeading('Delete Tag')
                     ->modalDescription('Are you sure you want to delete this tag? This action cannot be undone.')
-                    ->modalSubmitActionLabel('Yes, delete it'),
+                    ->modalSubmitActionLabel('Yes, delete it')
+                    ->before(function (Tables\Actions\DeleteAction $action, BlogTag $record) {
+                        // Kiểm tra xem tag có bài viết liên kết không
+                        $postsCount = $record->posts()->count();
+
+                        if ($postsCount > 0) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Không thể xóa tag')
+                                ->body("Tag này có {$postsCount} bài viết liên kết. Vui lòng xóa liên kết các bài viết trước.")
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
+                // Thêm nút để xem các bài viết liên kết
+                Tables\Actions\Action::make('view_posts')
+                    ->label('Xem bài viết')
+                    ->tooltip('Xem các bài viết sử dụng tag này')
+                    ->icon('heroicon-o-document-text')
+                    ->url(fn (BlogTag $record) => route('filament.admin.resources.blog-posts.index', [
+                        'tableFilters[tags][value]' => $record->id,
+                    ]))
+                    ->visible(fn (BlogTag $record) => $record->posts()->count() > 0)
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function (Collection $records) {
+                            $canDelete = [];
+                            $cannotDelete = [];
+
+                            foreach ($records as $record) {
+                                if ($record->posts()->count() === 0) {
+                                    $canDelete[] = $record->id;
+                                } else {
+                                    $cannotDelete[] = $record->name;
+                                }
+                            }
+
+                            // Nếu có tag không thể xóa thì hiển thị thông báo
+                            if (!empty($cannotDelete)) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Một số tag không thể xóa')
+                                    ->body('Các tag sau có bài viết liên kết và không thể xóa: ' . implode(', ', $cannotDelete))
+                                    ->persistent()
+                                    ->send();
+                            }
+
+                            // Xóa các tag có thể xóa
+                            if (!empty($canDelete)) {
+                                BlogTag::whereIn('id', $canDelete)->delete();
+
+                                Notification::make()
+                                    ->success()
+                                    ->title('Đã xóa tag')
+                                    ->body(count($canDelete) . ' tag đã được xóa thành công.')
+                                    ->send();
+                            }
+                        }),
                 ]),
             ]);
     }
