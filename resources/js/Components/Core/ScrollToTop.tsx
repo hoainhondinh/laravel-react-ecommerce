@@ -46,18 +46,6 @@ export default function ScrollToTop({
         visibility: isVisible ? 'visible' : 'hidden',
         transition: 'opacity 0.3s, visibility 0.3s, transform 0.3s',
       }}
-      style={{
-        bottom: `${bottom}px`,
-        opacity: isVisible ? 1 : 0,
-        visibility: isVisible ? 'visible' : 'hidden',
-        transition: 'opacity 0.3s, visibility 0.3s, transform 0.3s',
-      }}
-      style={{
-        bottom: `${bottom}px`,
-        opacity: isVisible ? 1 : 0,
-        visibility: isVisible ? 'visible' : 'hidden',
-        transition: 'opacity 0.3s, visibility 0.3s, transform 0.3s',
-      }}
       aria-label="Cuộn lên đầu trang"
     >
       <FaArrowUp size={24} />
