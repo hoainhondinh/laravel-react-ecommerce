@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -13,8 +14,38 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, SoftDeletes;
+    protected static function boot()
+    {
+        parent::boot();
 
+        static::deleting(function ($user) {
+            // Xóa các bản ghi liên quan
+            $user->orders()->delete();
+            if ($user->vendor) {
+                $user->vendor()->delete();
+            }
+        });
+
+        static::forceDeleting(function ($user) {
+            try {
+                // Ngắt kết nối các quan hệ
+                $user->roles()->detach();
+                $user->permissions()->detach();
+
+                // Cập nhật user_id thành null thay vì xóa
+                $user->blogPosts()->update(['user_id' => null]);
+                $user->orders()->update(['user_id' => null]);
+
+                // Với vendor, có thể xóa hoặc cập nhật tùy trường hợp
+                if ($user->vendor) {
+                    $user->vendor()->delete();
+                }
+            } catch (\Exception $e) {
+                \Log::error('Lỗi khi xử lý forceDeleting cho user: ' . $e->getMessage());
+            }
+        });
+    }
     /**
      * The attributes that are mass assignable.
      *
@@ -61,4 +92,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+    public function blogPosts(): HasMany
+    {
+        return $this->hasMany(BlogPost::class, 'user_id');
+    }
+
 }

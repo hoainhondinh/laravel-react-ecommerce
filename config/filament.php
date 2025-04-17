@@ -16,6 +16,9 @@ return [
     'widgets' => [
         App\Filament\Widgets\StatsOverview::class,
         App\Filament\Widgets\RevenueChart::class,
+        App\Filament\Widgets\InventoryStatsWidget::class,
+        App\Filament\Widgets\LowStockWidget::class,
+        App\Filament\Widgets\OutOfStockWidget::class,
     ],
     'broadcasting' => [
 
