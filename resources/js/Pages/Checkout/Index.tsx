@@ -1,4 +1,3 @@
-// Cập nhật hàm submit và xử lý khác biệt cho guest và user đã đăng nhập
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import { PageProps, GroupedCartItems } from '@/types';
@@ -9,8 +8,9 @@ import FlashMessages from '@/Components/Core/FlashMessages';
 export default function Index({
                                 cartItems,
                                 totalPrice,
-                                isGuest, // Thêm prop isGuest
-                                guestInfo // Thêm prop guestInfo
+                                isGuest,
+                                guestInfo,
+                                auth
                               }: PageProps<{
   cartItems: Record<number, GroupedCartItems>;
   totalPrice: number;
@@ -41,34 +41,28 @@ export default function Index({
 
   // Pre-populate form với dữ liệu guest hoặc user tùy theo trạng thái
   useEffect(() => {
-    console.log('Setting initial form data. IsGuest:', isGuest);
-    console.log('Guest info available:', guestInfo);
-
     if (isGuest && guestInfo) {
-      console.log('Populating form with guest info:', guestInfo);
       setData(prevState => ({
         ...prevState,
         name: guestInfo.name || '',
         email: guestInfo.email || '',
         phone: guestInfo.phone || ''
       }));
-    } else if (window.auth?.user) {
-      console.log('Populating form with user info');
-      const user = window.auth.user;
+    } else if (auth?.user) {
+      const user = auth.user;
       setData(prevState => ({
         ...prevState,
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
-        address: user.address || ''
+        address: user.address || '' // Tự động điền địa chỉ từ thông tin tài khoản
       }));
     }
-  }, [isGuest, guestInfo]);
+  }, [isGuest, guestInfo, auth?.user]);
 
   // Validate và các hàm xử lý (giữ nguyên)
   const validateField = (name: string, value: string) => {
     let error = '';
-
 
     switch (name) {
       case 'name':
@@ -90,45 +84,38 @@ export default function Index({
         break;
     }
 
-
     // Update error state for this field
     setClientErrors(prev => ({ ...prev, [name]: error }));
     return error === '';
   };
 
-
-// Handle input change with validation
+  // Handle input change with validation
   const handleChange = (name: string, value: string) => {
     setData(name, value);
     validateField(name, value);
   };
 
-
-// Validate all fields before submission
+  // Validate all fields before submission
   const validateForm = () => {
     const fields = ['name', 'email', 'phone', 'address'];
     let isValid = true;
-
 
     fields.forEach(field => {
       const fieldIsValid = validateField(field, data[field as keyof typeof data] as string);
       if (!fieldIsValid) isValid = false;
     });
 
-
     return isValid;
   };
 
-// Display either client-side or server-side error
+  // Display either client-side or server-side error
   const getErrorMessage = (field: string) => {
     return errors[field] || clientErrors[field as keyof typeof clientErrors];
-    }
+  }
+
   // Hàm submit cải tiến
   function submit(e: React.FormEvent) {
     e.preventDefault();
-
-    console.log('Form submitting with data:', data);
-    console.log('User type:', isGuest ? 'Guest' : 'Authenticated');
 
     if (validateForm()) {
       // Hiển thị trạng thái loading
@@ -140,24 +127,18 @@ export default function Index({
         preserveScroll: false,
 
         onSuccess: (page) => {
-          console.log('Checkout success, page:', page);
-
           // Đối với guest checkout, thêm xử lý thủ công nếu cần
           if (isGuest && page.component === 'Checkout/Index') {
-            console.log('Still on checkout page after guest checkout, manual redirect needed');
-
             // Tìm order_id từ response
             const orderId =
               page.props?.order_id ||
               page.props?.flash?.order_id;
 
             if (orderId) {
-              console.log('Found order ID, redirecting manually:', orderId);
               // Chuyển hướng thủ công
               window.location.href = route('checkout.confirmation', orderId);
             } else {
               // Nếu không tìm thấy order_id, tải lại trang
-              console.log('No order ID found, reloading page');
               window.location.reload();
             }
           }
@@ -165,7 +146,6 @@ export default function Index({
         },
 
         onError: (errors) => {
-          console.error('Checkout errors:', errors);
           setIsSubmitting(false);
 
           // Hiển thị lỗi cho người dùng
@@ -179,6 +159,7 @@ export default function Index({
       });
     }
   }
+
   // Hiển thị khác nhau cho guest và user đã đăng nhập
   const renderAccountInfo = () => {
     if (isGuest) {
@@ -267,7 +248,6 @@ export default function Index({
                     onChange={e => handleChange('name', e.target.value)}
                     onBlur={e => validateField('name', e.target.value)}
                     placeholder="Nhập họ tên người nhận hàng"
-                    readOnly={false} // Có thể thay đổi dựa trên trạng thái nếu cần
                   />
                   {getErrorMessage('name') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('name')}</div>}
                 </div>
@@ -281,7 +261,6 @@ export default function Index({
                     onChange={e => handleChange('email', e.target.value)}
                     onBlur={e => validateField('email', e.target.value)}
                     placeholder="example@gmail.com"
-                    readOnly={false} // Có thể thay đổi dựa trên trạng thái nếu cần
                   />
                   {getErrorMessage('email') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('email')}</div>}
                 </div>
@@ -308,7 +287,7 @@ export default function Index({
                     onChange={e => handleChange('address', e.target.value)}
                     onBlur={e => validateField('address', e.target.value)}
                     placeholder="Vui lòng nhập đầy đủ địa chỉ giao hàng (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
-                  ></textarea>
+                  />
                   {getErrorMessage('address') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('address')}</div>}
                 </div>
 

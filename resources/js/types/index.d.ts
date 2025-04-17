@@ -4,6 +4,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string;
+  address?: string;
   email_verified_at?: string;
 }
 
@@ -203,6 +205,11 @@ export type PageProps<
   csrf_token: string;
   auth: {
     user: User;
+  };
+  flash: {
+    success?: string;
+    error?: string;
+    order_id?: number;
   };
   ziggy: Config & { location: string };
   totalQuantity: number;

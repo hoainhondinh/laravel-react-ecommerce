@@ -120,6 +120,27 @@ class CheckoutController extends Controller
             $isGuest = !auth()->check();
             $userId = auth()->id();
 
+            // Lưu thông tin người dùng nếu đã đăng nhập
+            if (!$isGuest) {
+                $user = auth()->user();
+                // Nếu địa chỉ hoặc số điện thoại chưa được lưu trong hồ sơ, lưu lại
+                $userUpdated = false;
+
+                if (!$user->phone && $validated['phone']) {
+                    $user->phone = $validated['phone'];
+                    $userUpdated = true;
+                }
+
+                if (!$user->address && $validated['address']) {
+                    $user->address = $validated['address'];
+                    $userUpdated = true;
+                }
+
+                if ($userUpdated) {
+                    $user->save();
+                }
+            }
+
             // Tạo đơn hàng
             $orderData = [
                 'user_id' => $userId,
@@ -172,11 +193,6 @@ class CheckoutController extends Controller
                 $order->user->notify(new NewOrderNotification($order));
             } else {
                 // Nếu là guest, lưu token vào session để theo dõi đơn hàng
-                // ĐẶT CODE LƯU TOKEN MỚI TẠI ĐÂY
-                // Thay thế đoạn code cũ:
-                // session()->put('guest_order_' . $order->id, $order->token);
-
-                // Lưu token với key rõ ràng
                 $sessionKey = 'guest_order_' . $order->id;
                 session()->put($sessionKey, $order->token);
                 session()->save(); // Đảm bảo session được lưu ngay lập tức
@@ -205,7 +221,6 @@ class CheckoutController extends Controller
             session()->save(); // Đảm bảo session được lưu ngay lập tức
 
             // Commit transaction
-            // Commit transaction
             DB::commit();
 
             // Thêm order_id vào session flash để có thể truy cập ở frontend
@@ -214,15 +229,9 @@ class CheckoutController extends Controller
             // Đảm bảo session được lưu trước khi redirect
             session()->save();
 
-            // Thêm log để debug
-            Log::info('Redirecting after checkout', [
-                'user_type' => $isGuest ? 'guest' : 'authenticated',
-                'order_id' => $order->id,
-            ]);
-
             // Chuyển đến trang xác nhận đơn hàng
             return redirect()->route('checkout.confirmation', $order->id)
-                ->with('order_id', $order->id);  // Truyền thêm thông tin order_id
+                ->with('order_id', $order->id);
 
         } catch (\Exception $e) {
             // Rollback transaction
@@ -243,8 +252,7 @@ class CheckoutController extends Controller
         }
     }
 
-    // Sửa phương thức confirmation() trong CheckoutController.php
-
+    // Phương thức confirmation() giữ nguyên như đã có
     public function confirmation(Order $order, VietQRService $vietQRService)
     {
         // Kiểm tra quyền truy cập
