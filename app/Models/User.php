@@ -25,6 +25,8 @@ class User extends Authenticatable
             if ($user->vendor) {
                 $user->vendor()->delete();
             }
+            // Xóa địa chỉ khi xóa tài khoản
+            $user->addresses()->delete();
         });
 
         static::forceDeleting(function ($user) {
@@ -41,6 +43,9 @@ class User extends Authenticatable
                 if ($user->vendor) {
                     $user->vendor()->delete();
                 }
+
+                // Force delete địa chỉ
+                $user->addresses()->forceDelete();
             } catch (\Exception $e) {
                 \Log::error('Lỗi khi xử lý forceDeleting cho user: ' . $e->getMessage());
             }
@@ -56,6 +61,7 @@ class User extends Authenticatable
         'email',
         'password',
         'address',
+        'phone',
     ];
 
     /**
@@ -93,9 +99,25 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+
     public function blogPosts(): HasMany
     {
         return $this->hasMany(BlogPost::class, 'user_id');
     }
 
+    /**
+     * Relationship with addresses
+     */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    /**
+     * Get default address of user
+     */
+    public function getDefaultAddressAttribute()
+    {
+        return $this->addresses()->where('is_default', true)->first();
+    }
 }

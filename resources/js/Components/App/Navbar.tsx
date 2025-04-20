@@ -267,6 +267,12 @@ const Navbar: React.FC<NavbarProps> = () => {
                         Tài khoản của tôi
                       </Link>
                       <Link
+                        href={route('profile.addresses')}
+                        className="block px-4 py-2 text-sm text-[#333333] hover:bg-[#D8C8A4]"
+                      >
+                        Địa chỉ giao hàng
+                      </Link>
+                      <Link
                         href={route('orders.index')}
                         className="block px-4 py-2 text-sm text-[#333333] hover:bg-[#D8C8A4]"
                       >

@@ -71,11 +71,26 @@ class CheckoutController extends Controller
         $isGuest = !auth()->check();
         $guestInfo = session('guest_information', []);
 
+        $userAddresses = [];
+
+        // Nếu người dùng đã đăng nhập, lấy danh sách địa chỉ của họ
+        if (!$isGuest) {
+            $userAddresses = auth()->user()->addresses()
+                ->orderBy('is_default', 'desc')
+                ->get()
+                ->map(function ($address) {
+                    // Thêm accessor full_address để hiển thị trên frontend
+                    $address->full_address = $address->getFullAddressAttribute();
+                    return $address;
+                });
+        }
+
         return Inertia::render('Checkout/Index', [
             'cartItems' => $cartItems,
             'totalPrice' => $totalPrice,
             'isGuest' => $isGuest,
             'guestInfo' => $guestInfo,
+            'userAddresses' => $userAddresses,
         ]);
     }
 

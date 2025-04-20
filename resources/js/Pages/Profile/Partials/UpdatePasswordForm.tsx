@@ -1,27 +1,16 @@
+import { useRef, FormEventHandler } from 'react';
 import InputError from '@/Components/Core/InputError';
 import InputLabel from '@/Components/Core/InputLabel';
+import PrimaryButton from '@/Components/Core/PrimaryButton';
 import TextInput from '@/Components/Core/TextInput';
-import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import { Transition } from '@headlessui/react';
 
-export default function UpdatePasswordForm({
-                                             className = '',
-                                           }: {
-  className?: string;
-}) {
+export default function UpdatePasswordForm({ className = '' }: { className?: string }) {
   const passwordInput = useRef<HTMLInputElement>(null);
   const currentPasswordInput = useRef<HTMLInputElement>(null);
 
-  const {
-    data,
-    setData,
-    errors,
-    put,
-    reset,
-    processing,
-    recentlySuccessful,
-  } = useForm({
+  const { data, setData, errors, put, reset, processing, recentlySuccessful } = useForm({
     current_password: '',
     password: '',
     password_confirmation: '',
@@ -48,45 +37,33 @@ export default function UpdatePasswordForm({
   };
 
   return (
-    <section className={className}>
+    <section className={className} id="update-password">
       <header>
-        <h2 className="text-xl font-bold text-neutral">
-          Cập nhật mật khẩu
-        </h2>
-
-        <p className="mt-1 text-sm text-charcoal">
-          Đảm bảo tài khoản của bạn đang sử dụng mật khẩu dài và ngẫu nhiên để giữ an toàn.
+        <h2 className="text-lg font-medium text-gray-900">Đổi mật khẩu</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          Đảm bảo tài khoản của bạn đang sử dụng mật khẩu dài, ngẫu nhiên để giữ an toàn.
         </p>
       </header>
 
       <form onSubmit={updatePassword} className="mt-6 space-y-6">
         <div>
-          <InputLabel
-            htmlFor="current_password"
-            value="Mật khẩu hiện tại"
-            className="text-charcoal font-medium"
-          />
+          <InputLabel htmlFor="current_password" value="Mật khẩu hiện tại" />
 
           <TextInput
             id="current_password"
             ref={currentPasswordInput}
             value={data.current_password}
-            onChange={(e) =>
-              setData('current_password', e.target.value)
-            }
+            onChange={(e) => setData('current_password', e.target.value)}
             type="password"
-            className="mt-1 block w-full border-gray-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+            className="mt-1 block w-full"
             autoComplete="current-password"
           />
 
-          <InputError
-            message={errors.current_password}
-            className="mt-2"
-          />
+          <InputError message={errors.current_password} className="mt-2" />
         </div>
 
         <div>
-          <InputLabel htmlFor="password" value="Mật khẩu mới" className="text-charcoal font-medium" />
+          <InputLabel htmlFor="password" value="Mật khẩu mới" />
 
           <TextInput
             id="password"
@@ -94,7 +71,7 @@ export default function UpdatePasswordForm({
             value={data.password}
             onChange={(e) => setData('password', e.target.value)}
             type="password"
-            className="mt-1 block w-full border-gray-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+            className="mt-1 block w-full"
             autoComplete="new-password"
           />
 
@@ -102,48 +79,30 @@ export default function UpdatePasswordForm({
         </div>
 
         <div>
-          <InputLabel
-            htmlFor="password_confirmation"
-            value="Xác nhận mật khẩu mới"
-            className="text-charcoal font-medium"
-          />
+          <InputLabel htmlFor="password_confirmation" value="Xác nhận mật khẩu mới" />
 
           <TextInput
             id="password_confirmation"
             value={data.password_confirmation}
-            onChange={(e) =>
-              setData('password_confirmation', e.target.value)
-            }
+            onChange={(e) => setData('password_confirmation', e.target.value)}
             type="password"
-            className="mt-1 block w-full border-gray-300 focus:border-primary focus:ring-primary rounded-md shadow-sm"
+            className="mt-1 block w-full"
             autoComplete="new-password"
           />
 
-          <InputError
-            message={errors.password_confirmation}
-            className="mt-2"
-          />
+          <InputError message={errors.password_confirmation} className="mt-2" />
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={processing}
-            className="btn btn-primary text-white"
-          >
-            Lưu thay đổi
-          </button>
+          <PrimaryButton disabled={processing}>Lưu mật khẩu</PrimaryButton>
 
           <Transition
             show={recentlySuccessful}
-            enter="transition ease-in-out"
             enterFrom="opacity-0"
-            leave="transition ease-in-out"
             leaveTo="opacity-0"
+            className="transition ease-in-out"
           >
-            <p className="text-sm text-green-600">
-              Đã lưu.
-            </p>
+            <p className="text-sm text-green-600">Đã lưu thành công.</p>
           </Transition>
         </div>
       </form>

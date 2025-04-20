@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import { PageProps, GroupedCartItems } from '@/types';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 import FlashMessages from '@/Components/Core/FlashMessages';
+import AddressSelector from '@/Components/App/AddressSelector';
+
+interface Address {
+  id: number;
+  name: string;
+  phone: string;
+  address: string;
+  province?: string;
+  district?: string;
+  ward?: string;
+  is_default: boolean;
+  full_address: string;
+}
 
 export default function Index({
                                 cartItems,
                                 totalPrice,
                                 isGuest,
                                 guestInfo,
-                                auth
+                                auth,
+                                userAddresses = []
                               }: PageProps<{
   cartItems: Record<number, GroupedCartItems>;
   totalPrice: number;
@@ -20,15 +34,19 @@ export default function Index({
     email?: string;
     phone?: string;
   };
+  userAddresses?: Address[];
 }>) {
-  const { data, setData, post, processing, errors } = useForm({
+  const {data, setData, post, processing, errors} = useForm({
     name: '',
     email: '',
     phone: '',
     address: '',
+    address_id: 0, // New field for selected address ID
     payment_method: 'cod'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(isGuest || userAddresses.length === 0);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
   // Client-side validation state
   const [clientErrors, setClientErrors] = useState({
@@ -50,17 +68,77 @@ export default function Index({
       }));
     } else if (auth?.user) {
       const user = auth.user;
-      setData(prevState => ({
-        ...prevState,
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        address: user.address || '' // Tự động điền địa chỉ từ thông tin tài khoản
-      }));
-    }
-  }, [isGuest, guestInfo, auth?.user]);
 
-  // Validate và các hàm xử lý (giữ nguyên)
+      // If we have user addresses
+      if (userAddresses.length > 0) {
+        // Find default address or use the first one
+        const defaultAddress = userAddresses.find(addr => addr.is_default) || userAddresses[0];
+
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+          setData(prevState => ({
+            ...prevState,
+            address_id: defaultAddress.id,
+            name: defaultAddress.name,
+            phone: defaultAddress.phone,
+            address: defaultAddress.full_address,
+            email: user.email || '',
+          }));
+
+          // If we have addresses, hide the address form initially
+          setShowAddressForm(false);
+        } else {
+          // Fallback to user info if no addresses
+          setData(prevState => ({
+            ...prevState,
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone || '',
+            address: user.address || '',
+            address_id: 0,
+          }));
+          setShowAddressForm(true);
+        }
+      } else {
+        // No addresses, use user profile data
+        setData(prevState => ({
+          ...prevState,
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          address: user.address || '',
+          address_id: 0,
+        }));
+        setShowAddressForm(true);
+      }
+    }
+  }, [isGuest, guestInfo, auth?.user, userAddresses]);
+
+  // Handle address selection
+  const handleAddressSelect = (address: Address) => {
+    setSelectedAddressId(address.id);
+    setData(prevState => ({
+      ...prevState,
+      address_id: address.id,
+      name: address.name,
+      phone: address.phone,
+      address: address.full_address
+    }));
+    setShowAddressForm(false);
+  };
+
+  // Toggle to add new address manually
+  const handleAddNewAddress = () => {
+    setSelectedAddressId(null);
+    setData(prevState => ({
+      ...prevState,
+      address_id: 0,
+      // Keep the existing data in the form for editing
+    }));
+    setShowAddressForm(true);
+  };
+
+  // Validate field function (existing code)
   const validateField = (name: string, value: string) => {
     let error = '';
 
@@ -85,7 +163,7 @@ export default function Index({
     }
 
     // Update error state for this field
-    setClientErrors(prev => ({ ...prev, [name]: error }));
+    setClientErrors(prev => ({...prev, [name]: error}));
     return error === '';
   };
 
@@ -113,7 +191,7 @@ export default function Index({
     return errors[field] || clientErrors[field as keyof typeof clientErrors];
   }
 
-  // Hàm submit cải tiến
+  // Submit function
   function submit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -122,7 +200,6 @@ export default function Index({
       setIsSubmitting(true);
 
       post(route('checkout.store'), {
-        // Quan trọng: Không giữ trạng thái để cho phép redirect đầy đủ
         preserveState: false,
         preserveScroll: false,
 
@@ -160,14 +237,16 @@ export default function Index({
     }
   }
 
-  // Hiển thị khác nhau cho guest và user đã đăng nhập
+  // Render account info section
   const renderAccountInfo = () => {
     if (isGuest) {
       return (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
           <div className="flex items-start">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500 mr-2" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <div>
               <h3 className="font-medium text-blue-800">Đang thanh toán với tư cách khách</h3>
@@ -186,13 +265,21 @@ export default function Index({
       return (
         <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
           <div className="flex items-start">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500 mr-2" fill="none"
+                 viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
             </svg>
             <div>
               <h3 className="font-medium text-green-800">Đang thanh toán với tài khoản của bạn</h3>
               <p className="text-sm text-green-600 mt-1">
                 Đơn hàng sẽ được lưu vào lịch sử đơn hàng của bạn.
+                {userAddresses.length === 0 && (
+                  <span className="block mt-1">
+                    <Link href={route('profile.addresses')} className="text-green-700 hover:underline">
+                      Quản lý địa chỉ giao hàng
+                    </Link>
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -204,8 +291,8 @@ export default function Index({
   // Phần render form với các trường phân biệt xử lý
   return (
     <AuthenticatedLayout>
-      <Head title="Thanh toán" />
-      <FlashMessages />
+      <Head title="Thanh toán"/>
+      <FlashMessages/>
 
       <div className="py-12">
         {isGuest && (
@@ -213,14 +300,18 @@ export default function Index({
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                       fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"/>
                   </svg>
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-blue-800">Thanh toán với tư cách khách</h3>
                   <div className="mt-2 text-sm text-blue-700">
-                    <p>Bạn đang thanh toán với tư cách khách. Đơn hàng sẽ được xử lý và bạn sẽ nhận được email xác nhận.</p>
+                    <p>Bạn đang thanh toán với tư cách khách. Đơn hàng sẽ được xử lý và bạn sẽ nhận được email xác
+                      nhận.</p>
                   </div>
                 </div>
               </div>
@@ -239,62 +330,99 @@ export default function Index({
               <h2 className="text-lg font-bold mb-4 text-neutral">Thông tin giao hàng</h2>
 
               <form onSubmit={submit}>
-                <div className="mb-4">
-                  <label className="block text-charcoal font-medium">Họ tên <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('name') ? 'border-red-500' : ''}`}
-                    value={data.name}
-                    onChange={e => handleChange('name', e.target.value)}
-                    onBlur={e => validateField('name', e.target.value)}
-                    placeholder="Nhập họ tên người nhận hàng"
-                  />
-                  {getErrorMessage('name') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('name')}</div>}
-                </div>
+                {/* Địa chỉ selector cho người dùng đã đăng nhập */}
+                {!isGuest && userAddresses.length > 0 && (
+                  <div className="mb-6">
+                    <AddressSelector
+                      addresses={userAddresses}
+                      onSelect={handleAddressSelect}
+                      selectedAddressId={selectedAddressId}
+                      onAddNew={handleAddNewAddress}
+                    />
 
-                <div className="mb-4">
-                  <label className="block text-charcoal font-medium">Email <span className="text-red-500">*</span></label>
-                  <input
-                    type="email"
-                    className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('email') ? 'border-red-500' : ''}`}
-                    value={data.email}
-                    onChange={e => handleChange('email', e.target.value)}
-                    onBlur={e => validateField('email', e.target.value)}
-                    placeholder="example@gmail.com"
-                  />
-                  {getErrorMessage('email') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('email')}</div>}
-                </div>
+                    {!showAddressForm && (
+                      <div className="mt-3 text-right">
+                        <Link
+                          href={route('profile.addresses')}
+                          className="text-sm text-primary hover:underline"
+                          target="_blank"
+                        >
+                          Quản lý địa chỉ
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                <div className="mb-4">
-                  <label className="block text-charcoal font-medium">Số điện thoại <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('phone') ? 'border-red-500' : ''}`}
-                    value={data.phone}
-                    onChange={e => handleChange('phone', e.target.value)}
-                    onBlur={e => validateField('phone', e.target.value)}
-                    placeholder="Ví dụ: 0912345678"
-                  />
-                  {getErrorMessage('phone') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('phone')}</div>}
-                </div>
+                {/* Form nhập thông tin nếu là guest hoặc muốn thêm địa chỉ mới */}
+                {showAddressForm && (
+                  <>
+                    <div className="mb-4">
+                      <label className="block text-charcoal font-medium">Họ tên <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('name') ? 'border-red-500' : ''}`}
+                        value={data.name}
+                        onChange={e => handleChange('name', e.target.value)}
+                        onBlur={e => validateField('name', e.target.value)}
+                        placeholder="Nhập họ tên người nhận hàng"
+                      />
+                      {getErrorMessage('name') &&
+                        <div className="text-red-500 text-sm mt-1">{getErrorMessage('name')}</div>}
+                    </div>
 
-                <div className="mb-4">
-                  <label className="block text-charcoal font-medium">Địa chỉ giao hàng <span className="text-red-500">*</span></label>
-                  <textarea
-                    className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('address') ? 'border-red-500' : ''}`}
-                    rows={3}
-                    value={data.address}
-                    onChange={e => handleChange('address', e.target.value)}
-                    onBlur={e => validateField('address', e.target.value)}
-                    placeholder="Vui lòng nhập đầy đủ địa chỉ giao hàng (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
-                  />
-                  {getErrorMessage('address') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('address')}</div>}
-                </div>
+                    <div className="mb-4">
+                      <label className="block text-charcoal font-medium">Email <span
+                        className="text-red-500">*</span></label>
+                      <input
+                        type="email"
+                        className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('email') ? 'border-red-500' : ''}`}
+                        value={data.email}
+                        onChange={e => handleChange('email', e.target.value)}
+                        onBlur={e => validateField('email', e.target.value)}
+                        placeholder="example@gmail.com"
+                      />
+                      {getErrorMessage('email') &&
+                        <div className="text-red-500 text-sm mt-1">{getErrorMessage('email')}</div>}
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-charcoal font-medium">Số điện thoại <span
+                        className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('phone') ? 'border-red-500' : ''}`}
+                        value={data.phone}
+                        onChange={e => handleChange('phone', e.target.value)}
+                        onBlur={e => validateField('phone', e.target.value)}
+                        placeholder="Ví dụ: 0912345678"
+                      />
+                      {getErrorMessage('phone') &&
+                        <div className="text-red-500 text-sm mt-1">{getErrorMessage('phone')}</div>}
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-charcoal font-medium">Địa chỉ giao hàng <span
+                        className="text-red-500">*</span></label>
+                      <textarea
+                        className={`mt-1 block w-full rounded-md shadow-sm border-gray-300 focus:border-primary focus:ring-primary ${getErrorMessage('address') ? 'border-red-500' : ''}`}
+                        rows={3}
+                        value={data.address}
+                        onChange={e => handleChange('address', e.target.value)}
+                        onBlur={e => validateField('address', e.target.value)}
+                        placeholder="Vui lòng nhập đầy đủ địa chỉ giao hàng (số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
+                      />
+                      {getErrorMessage('address') &&
+                        <div className="text-red-500 text-sm mt-1">{getErrorMessage('address')}</div>}
+                    </div>
+                  </>
+                )}
 
                 <div className="mb-4">
                   <label className="block text-charcoal font-medium mb-2">Phương thức thanh toán</label>
                   <div className="space-y-4">
-                    <label className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-base-200 transition-colors">
+                    <label
+                      className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-base-200 transition-colors">
                       <input
                         type="radio"
                         name="payment_method"
@@ -309,7 +437,8 @@ export default function Index({
                       </div>
                     </label>
 
-                    <label className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-base-200 transition-colors">
+                    <label
+                      className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-base-200 transition-colors">
                       <input
                         type="radio"
                         name="payment_method"
@@ -385,7 +514,7 @@ export default function Index({
                                 <div className="flex justify-between items-center mt-1">
                                   <span className="text-sm text-gray-500">SL: {item.quantity}</span>
                                   <span className="font-medium text-primary">
-                                    <CurrencyFormatter amount={item.price * item.quantity} />
+                                    <CurrencyFormatter amount={item.price * item.quantity}/>
                                   </span>
                                 </div>
                               </div>
@@ -399,7 +528,7 @@ export default function Index({
                   <div className="border-t pt-4">
                     <div className="flex justify-between font-bold text-lg">
                       <span className="text-neutral">Tổng thanh toán:</span>
-                      <span className="text-primary"><CurrencyFormatter amount={totalPrice} /></span>
+                      <span className="text-primary"><CurrencyFormatter amount={totalPrice}/></span>
                     </div>
                   </div>
                 </>

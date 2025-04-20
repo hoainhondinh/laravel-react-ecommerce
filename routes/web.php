@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupportPageController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Guest Routes
 Route::get('/', [ProductController::class, 'home'])->name('dashboard');
@@ -62,9 +64,22 @@ Route::controller(CheckoutController::class)->group(function () {
 
 // Auth routes
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
+
+    // Profile routes
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Address management routes
+    Route::get('/profile/addresses', [AddressController::class, 'index'])->name('profile.addresses');
+    Route::post('/profile/addresses', [AddressController::class, 'store'])->name('profile.addresses.store');
+    Route::post('/profile/addresses/{address}', [AddressController::class, 'update'])->name('profile.addresses.update');
+    Route::put('/profile/addresses/{address}/set-default', [AddressController::class, 'setDefault'])->name('profile.addresses.set-default');
+    Route::delete('/profile/addresses/{address}', [AddressController::class, 'destroy'])->name('profile.addresses.destroy');
+
 
     Route::middleware(['verified'])->group(function () {
         // Order routes - Cần đăng nhập
