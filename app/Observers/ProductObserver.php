@@ -21,6 +21,12 @@ class ProductObserver
     {
         //
     }
+    public function saved(Product $product)
+    {
+        if ($product->shouldBeSearchable()) {
+            $product->searchable();
+        }
+    }
 
     /**
      * Handle the Product "deleted" event.
@@ -39,6 +45,10 @@ class ProductObserver
         }
 
         return true;
+    }
+    public function deleted(Product $product)
+    {
+        $product->unsearchable();
     }
 
     /**

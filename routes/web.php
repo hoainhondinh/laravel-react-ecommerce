@@ -10,6 +10,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SupportPageController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -19,6 +20,11 @@ Route::get('/', [ProductController::class, 'home'])->name('dashboard');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/department/{department:slug}', [ProductController::class, 'department'])->name('department.show');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('product.show');
+// Search results page
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+
+// API endpoint for search suggestions
+Route::get('/api/search-suggestions', [SearchController::class, 'searchSuggestions'])->name('api.search.suggestions');
 // Blog Routes
 Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');

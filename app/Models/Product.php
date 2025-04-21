@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Product extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use InteractsWithMedia, Searchable;
 
     protected $fillable = [
         'title',
@@ -57,6 +58,7 @@ class Product extends Model implements HasMedia
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', ProductStatusEnum::Published);
+
     }
 
     public function scopeForWebsite(Builder $query): Builder
@@ -452,5 +454,54 @@ class Product extends Model implements HasMedia
         } else {
             return $this->quantity <= 0;
         }
+    }
+    public function searchable()
+    {
+        // Trả về true nếu việc index thành công
+        return parent::searchable() !== false;
+    }
+
+    public function shouldBeSearchable()
+    {
+        // Kiểm tra điều kiện index
+        return $this->status === 'Published' && $this->quantity > 0;
+    }
+
+    public function toSearchableArray(): array
+    {
+        $array = $this->toArray();
+
+        // Tạo một trường mới kết hợp các thông tin tìm kiếm
+        $array['searchable_content'] = $this->title . ' ' .
+            $this->slug . ' ' .
+            strip_tags($this->description);
+
+        // Thêm tên department và category nếu có quan hệ
+        if ($this->department) {
+            $array['department_name'] = $this->department->name;
+        }
+
+        if ($this->category) {
+            $array['category_name'] = $this->category->name;
+        }
+
+        // Lấy URL hình ảnh
+        $array['image_url'] = $this->getFirstMediaUrl('images', 'thumb');
+
+        // Loại bỏ những trường không cần thiết
+        unset($array['created_at'], $array['updated_at']);
+        unset($array['created_by'], $array['updated_by']);
+
+        return $array;
+    }
+
+    public function searchableAs()
+    {
+        return 'products_index';
+    }
+
+    protected function makeAllSearchableUsing($query)
+    {
+        return $query->with(['department', 'category']);
     }
 }

@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.0
+    container_name: yensaigon_meilisearch
+    ports:
+      - "${MEILISEARCH_PORT:-7700}:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+    environment:
+      - MEILI_MASTER_KEY=${MEILISEARCH_KEY:-masterKey}
+      - MEILI_NO_ANALYTICS=${MEILI_NO_ANALYTICS:-true}
+      - MEILI_ENV=${MEILI_ENV:-development}
+    restart: unless-stopped
+    networks:
+      - app_network
+
+volumes:
+  meilisearch_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge

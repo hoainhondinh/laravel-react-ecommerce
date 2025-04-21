@@ -56,6 +56,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Đăng ký observer cho quản lý tồn kho
         Product::observe(InventoryObserver::class, ProductObserver::class);
+        // Đăng ký observer cho Meilisearch
+        Product::observe(ProductObserver::class);
         // Đăng ký observer cho Department
         Department::observe(DepartmentObserver::class);
 

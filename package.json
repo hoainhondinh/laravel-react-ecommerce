@@ -28,8 +28,10 @@
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
+        "@types/lodash.debounce": "^4.0.9",
         "daisyui": "^4.12.22",
         "dompurify": "^3.2.4",
+        "lodash.debounce": "^4.0.8",
         "react-helmet": "^6.1.0",
         "react-hot-toast": "^2.5.2",
         "react-icons": "^5.5.0",

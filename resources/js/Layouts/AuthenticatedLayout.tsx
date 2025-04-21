@@ -8,6 +8,7 @@ import Navbar from '@/Components/App/Navbar';
 import ContactButtons from "@/Components/Core/ContactButtons";
 import {Toaster} from "react-hot-toast";
 import ScrollToTop from "@/Components/Core/ScrollToTop";
+
 export default function AuthenticatedLayout({
                                               header,
                                               children,

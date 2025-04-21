@@ -126,6 +126,12 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+        'meilisearch' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/meilisearch.log'),
+            'level' => 'debug',
+            'days' => 14,
+        ],
 
     ],
 
