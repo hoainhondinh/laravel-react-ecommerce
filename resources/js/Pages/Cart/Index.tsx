@@ -8,6 +8,12 @@ import CartItem from "@/Components/App/CartItem";
 import React, {useEffect, useState} from "react";
 import toast from "react-hot-toast";
 
+// Định nghĩa kiểu dữ liệu cho errors từ server
+interface CheckoutErrors {
+  error?: string;
+  [key: string]: string | undefined;
+}
+
 function Index(
   {
     csrf_token,
@@ -48,7 +54,7 @@ function Index(
     if (vendorId) {
       // Nếu có vendorId, sử dụng đường dẫn riêng cho từng vendor
       router.post(route('cart.checkout', { vendor_id: vendorId }), {}, {
-        onError: (errors) => {
+        onError: (errors: CheckoutErrors) => {
           // Hiển thị lỗi từ máy chủ (ví dụ: sản phẩm hết hàng)
           if (errors.error) {
             toast.error(errors.error);
@@ -60,7 +66,7 @@ function Index(
     } else {
       // Nếu không có vendorId, gọi route cart.checkout bình thường
       router.post(route('cart.checkout'), {}, {
-        onError: (errors) => {
+        onError: (errors: CheckoutErrors) => {
           // Hiển thị lỗi từ máy chủ (ví dụ: sản phẩm hết hàng)
           if (errors.error) {
             toast.error(errors.error);

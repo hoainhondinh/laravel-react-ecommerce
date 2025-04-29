@@ -26,7 +26,7 @@ interface Milestone {
   description: string;
 }
 
-interface AboutProps {
+interface AboutProps extends Record<string, unknown>  {
   team: TeamMember[];
   testimonials: Testimonial[];
   milestones: Milestone[];

@@ -6,6 +6,10 @@ interface SearchComponentProps {
   isMobile?: boolean;
 }
 
+interface SearchForm {
+  q: string;
+}
+
 const SearchComponent: React.FC<SearchComponentProps> = ({ isMobile = false }) => {
   const {
     query,
@@ -18,7 +22,9 @@ const SearchComponent: React.FC<SearchComponentProps> = ({ isMobile = false }) =
     performSearch
   } = useSearch();
 
-  const { get } = useForm();
+  const { get } = useForm<SearchForm>({
+    q: query
+  });
 
   // Xử lý submit search
   const handleSearchSubmit = (e: React.FormEvent) => {

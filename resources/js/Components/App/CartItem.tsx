@@ -85,7 +85,7 @@ function CartItem({item}: {item: CartItemType}) {
       onSuccess: () => {
         toast.success('Đã cập nhật số lượng');
       },
-      onError: (errors) => {
+      onError: (errors: Record<string, string>) => {
         setError(Object.values(errors)[0] as string);
         setQuantity(item.quantity); // Revert to original quantity on error
       }

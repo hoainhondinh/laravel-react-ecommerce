@@ -30,11 +30,11 @@ export default function ProductsGrid({
   // Xác định số cột dựa trên props
   const getColClass = () => {
     switch(columns) {
-      case 2: return "grid-cols-1 md:grid-cols-2";
-      case 3: return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
-      case 5: return "grid-cols-1 md:grid-cols-3 lg:grid-cols-5";
+      case 2: return "grid grid-cols-2 md:grid-cols-2";
+      case 3: return "grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3";
+      case 5: return "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5";
       case 4:
-      default: return "grid-cols-1 md:grid-cols-2 lg:grid-cols-4";
+      default: return "grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4";
     }
   };
 

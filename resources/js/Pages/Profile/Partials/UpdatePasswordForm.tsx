@@ -97,10 +97,14 @@ export default function UpdatePasswordForm({ className = '' }: { className?: str
           <PrimaryButton disabled={processing}>Lưu mật khẩu</PrimaryButton>
 
           <Transition
+            as="div"
             show={recentlySuccessful}
+            enter="transition ease-in-out"
             enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="transition ease-in-out"
+            leaveFrom="opacity-100"
             leaveTo="opacity-0"
-            className="transition ease-in-out"
           >
             <p className="text-sm text-green-600">Đã lưu thành công.</p>
           </Transition>

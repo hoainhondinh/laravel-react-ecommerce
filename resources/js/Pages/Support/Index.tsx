@@ -10,7 +10,7 @@ interface SupportPage {
   meta_description: string | null;
 }
 
-interface SupportIndexProps {
+interface SupportIndexProps extends Record<string, unknown> {
   supportPages: SupportPage[];
 }
 

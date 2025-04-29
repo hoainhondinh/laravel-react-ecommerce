@@ -18,6 +18,15 @@ interface Address {
   full_address: string;
 }
 
+interface FormValues {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  address_id: number;
+  payment_method: string;
+}
+
 export default function Index({
                                 cartItems,
                                 totalPrice,
@@ -36,7 +45,7 @@ export default function Index({
   };
   userAddresses?: Address[];
 }>) {
-  const {data, setData, post, processing, errors} = useForm({
+  const { data, setData, post, processing, errors } = useForm<FormValues>({
     name: '',
     email: '',
     phone: '',
@@ -49,23 +58,24 @@ export default function Index({
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
 
   // Client-side validation state
-  const [clientErrors, setClientErrors] = useState({
+  const [clientErrors, setClientErrors] = useState<Record<keyof FormValues, string>>({
     name: '',
     email: '',
     phone: '',
     address: '',
+    address_id: '',
     payment_method: ''
   });
 
   // Pre-populate form với dữ liệu guest hoặc user tùy theo trạng thái
   useEffect(() => {
     if (isGuest && guestInfo) {
-      setData(prevState => ({
-        ...prevState,
+      setData({
+        ...data,
         name: guestInfo.name || '',
         email: guestInfo.email || '',
         phone: guestInfo.phone || ''
-      }));
+      });
     } else if (auth?.user) {
       const user = auth.user;
 
@@ -76,70 +86,71 @@ export default function Index({
 
         if (defaultAddress) {
           setSelectedAddressId(defaultAddress.id);
-          setData(prevState => ({
-            ...prevState,
+          setData({
+            ...data,
             address_id: defaultAddress.id,
             name: defaultAddress.name,
             phone: defaultAddress.phone,
             address: defaultAddress.full_address,
             email: user.email || '',
-          }));
+          });
 
           // If we have addresses, hide the address form initially
           setShowAddressForm(false);
         } else {
           // Fallback to user info if no addresses
-          setData(prevState => ({
-            ...prevState,
+          setData({
+            ...data,
             name: user.name || '',
             email: user.email || '',
             phone: user.phone || '',
             address: user.address || '',
             address_id: 0,
-          }));
+          });
           setShowAddressForm(true);
         }
       } else {
         // No addresses, use user profile data
-        setData(prevState => ({
-          ...prevState,
+        setData({
+          ...data,
           name: user.name || '',
           email: user.email || '',
           phone: user.phone || '',
           address: user.address || '',
           address_id: 0,
-        }));
+        });
         setShowAddressForm(true);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGuest, guestInfo, auth?.user, userAddresses]);
 
   // Handle address selection
   const handleAddressSelect = (address: Address) => {
     setSelectedAddressId(address.id);
-    setData(prevState => ({
-      ...prevState,
+    setData({
+      ...data,
       address_id: address.id,
       name: address.name,
       phone: address.phone,
       address: address.full_address
-    }));
+    });
     setShowAddressForm(false);
   };
 
   // Toggle to add new address manually
   const handleAddNewAddress = () => {
     setSelectedAddressId(null);
-    setData(prevState => ({
-      ...prevState,
+    setData({
+      ...data,
       address_id: 0,
       // Keep the existing data in the form for editing
-    }));
+    });
     setShowAddressForm(true);
   };
 
   // Validate field function (existing code)
-  const validateField = (name: string, value: string) => {
+  const validateField = (name: keyof FormValues, value: string) => {
     let error = '';
 
     switch (name) {
@@ -168,18 +179,18 @@ export default function Index({
   };
 
   // Handle input change with validation
-  const handleChange = (name: string, value: string) => {
+  const handleChange = (name: keyof FormValues, value: string) => {
     setData(name, value);
     validateField(name, value);
   };
 
   // Validate all fields before submission
   const validateForm = () => {
-    const fields = ['name', 'email', 'phone', 'address'];
+    const fields: (keyof FormValues)[] = ['name', 'email', 'phone', 'address'];
     let isValid = true;
 
     fields.forEach(field => {
-      const fieldIsValid = validateField(field, data[field as keyof typeof data] as string);
+      const fieldIsValid = validateField(field, data[field] as string);
       if (!fieldIsValid) isValid = false;
     });
 
@@ -187,8 +198,8 @@ export default function Index({
   };
 
   // Display either client-side or server-side error
-  const getErrorMessage = (field: string) => {
-    return errors[field] || clientErrors[field as keyof typeof clientErrors];
+  const getErrorMessage = (field: keyof FormValues) => {
+    return errors[field] || clientErrors[field];
   }
 
   // Submit function
@@ -428,7 +439,7 @@ export default function Index({
                         name="payment_method"
                         value="cod"
                         checked={data.payment_method === 'cod'}
-                        onChange={() => setData('payment_method', 'cod')}
+                        onChange={() => handleChange('payment_method', 'cod')}
                         className="mt-1 mr-3"
                       />
                       <div>
@@ -444,7 +455,7 @@ export default function Index({
                         name="payment_method"
                         value="bank_transfer"
                         checked={data.payment_method === 'bank_transfer'}
-                        onChange={() => setData('payment_method', 'bank_transfer')}
+                        onChange={() => handleChange('payment_method', 'bank_transfer')}
                         className="mt-1 mr-3"
                       />
                       <div>
@@ -453,7 +464,7 @@ export default function Index({
                       </div>
                     </label>
                   </div>
-                  {errors.payment_method && <div className="text-red-500 text-sm mt-1">{errors.payment_method}</div>}
+                  {getErrorMessage('payment_method') && <div className="text-red-500 text-sm mt-1">{getErrorMessage('payment_method')}</div>}
                 </div>
 
                 <div className="mt-6">

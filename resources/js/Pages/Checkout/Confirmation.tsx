@@ -4,6 +4,11 @@ import { PageProps } from '@/types';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 
+interface OptionData {
+  name?: string;
+  [key: string]: any;
+}
+
 interface OrderItem {
   id: number;
   product_id: number;
@@ -14,7 +19,7 @@ interface OrderItem {
     slug: string;
     image: string;
   }
-  options: string[];
+  options: string[] | OptionData[] | Record<string, any> | string;
 }
 
 interface Order {
@@ -38,6 +43,55 @@ export default function Confirmation({
   order: Order;
   qrCodeUrl: string | null;
 }>) {
+  // Hàm helper để chuyển đổi options thành chuỗi hiển thị
+  const formatOptions = (options: any): string => {
+    // Nếu là chuỗi, thử parse JSON
+    if (typeof options === 'string') {
+      try {
+        options = JSON.parse(options);
+      } catch (e) {
+        return options; // Trả về nguyên chuỗi nếu không phải JSON
+      }
+    }
+
+    // Nếu là mảng rỗng hoặc object rỗng, trả về chuỗi trống
+    if ((Array.isArray(options) && options.length === 0) ||
+      (typeof options === 'object' && options !== null && Object.keys(options).length === 0)) {
+      return '';
+    }
+
+    // Xử lý mảng
+    if (Array.isArray(options)) {
+      return options.map((opt: any) =>
+        typeof opt === 'object' && opt !== null
+          ? `${opt.name || ''}`
+          : String(opt)
+      ).filter(Boolean).join(', ');
+    }
+
+    // Xử lý object
+    if (typeof options === 'object' && options !== null) {
+      return Object.entries(options)
+        .map(([key, value]) => {
+          // Bỏ qua các giá trị null hoặc undefined
+          if (value === null || value === undefined) return '';
+
+          // Nếu value là object có thuộc tính name
+          if (typeof value === 'object' && value !== null && 'name' in value) {
+            return value.name;
+          }
+
+          // Các cặp key-value thông thường
+          return `${key}: ${String(value)}`;
+        })
+        .filter(Boolean)
+        .join(', ');
+    }
+
+    // Trường hợp còn lại, chuyển đổi thành chuỗi
+    return String(options);
+  };
+
   return (
     <AuthenticatedLayout>
       <Head title="Xác nhận đơn hàng" />
@@ -104,65 +158,9 @@ export default function Confirmation({
                       />
                       <div>
                         <div>{item.product.title} x{item.quantity}</div>
-                        {/*{item.options && item.options.length > 0 && (*/}
-                        {/*  <div className="text-sm text-gray-500">{item.options.join(', ')}</div>*/}
-                        {/*)}*/}
-                        {/*{item.options && (*/}
-                        {/*  <div className="text-sm text-gray-500">*/}
-                        {/*    {typeof item.options === 'string'*/}
-                        {/*      ? JSON.parse(item.options).join(', ')*/}
-                        {/*      : Array.isArray(item.options)*/}
-                        {/*        ? item.options.join(', ')*/}
-                        {/*        : ''}*/}
-                        {/*  </div>*/}
-                        {/*)}*/}
                         {item.options && (
                           <div className="text-sm text-gray-500">
-                            {(() => {
-                              // Parse JSON string if needed
-                              let optionsData = item.options;
-                              if (typeof optionsData === 'string') {
-                                try {
-                                  optionsData = JSON.parse(optionsData);
-                                } catch (e) {
-                                  return optionsData; // Return as is if not valid JSON
-                                }
-                              }
-
-                              // If it's an empty object or array, don't show anything
-                              if ((Array.isArray(optionsData) && optionsData.length === 0) ||
-                                (typeof optionsData === 'object' && Object.keys(optionsData).length === 0)) {
-                                return '';
-                              }
-
-                              // Format options based on your application's structure
-                              if (Array.isArray(optionsData)) {
-                                return optionsData.map(opt =>
-                                  typeof opt === 'object' && opt !== null
-                                    ? `${opt.name || ''}`
-                                    : String(opt)
-                                ).filter(Boolean).join(', ');
-                              } else if (typeof optionsData === 'object' && optionsData !== null) {
-                                // This handles the case where options might be structured similar to option_ids
-                                return Object.entries(optionsData)
-                                  .map(([key, value]) => {
-                                    // Skip rendering if value is null or undefined
-                                    if (value === null || value === undefined) return '';
-
-                                    // If value is an object with a name property (like a VariationTypeOption)
-                                    if (typeof value === 'object' && value !== null && 'name' in value) {
-                                      return value.name;
-                                    }
-
-                                    // For regular key-value pairs
-                                    return `${key}: ${String(value)}`;
-                                  })
-                                  .filter(Boolean)
-                                  .join(', ');
-                              }
-
-                              return String(optionsData);
-                            })()}
+                            {formatOptions(item.options)}
                           </div>
                         )}
                       </div>

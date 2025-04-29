@@ -51,10 +51,9 @@ class AuthenticatedSessionController extends Controller
 
         // Xử lý chuyển hướng tùy thuộc vào vai trò
         if ($user->hasAnyRole([RolesEnum::Admin, RolesEnum::Vendor])) {
-            return Inertia::location(route('filament.admin.pages.dashboard'));
+            return redirect()->route('filament.admin.pages.dashboard');
         } else {
-            $route = route('dashboard', absolute: false);
-            return redirect()->intended($route);
+            return redirect()->route('profile.edit');
         }
     }
 
@@ -70,5 +69,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+
     }
 }

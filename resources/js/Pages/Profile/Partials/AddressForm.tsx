@@ -11,9 +11,10 @@ interface AddressFormData {
   is_default: boolean;
 }
 
+// Cập nhật kiểu của setData
 interface AddressFormProps {
   data: AddressFormData;
-  setData: Dispatch<SetStateAction<any>>;
+  setData: (key: keyof AddressFormData, value: AddressFormData[keyof AddressFormData]) => void;
   errors: Record<string, string>;
   processing: boolean;
   handleSubmit: (e: React.FormEvent) => void;
@@ -28,12 +29,12 @@ export default function AddressForm({
                                     }: AddressFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
-    setData(prevData => ({...prevData, [name]: value}));
+    setData(name as keyof AddressFormData, value);
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const {name, checked} = e.target;
-    setData(prevData => ({...prevData, [name]: checked}));
+    setData(name as keyof AddressFormData, checked);
   };
 
   return (

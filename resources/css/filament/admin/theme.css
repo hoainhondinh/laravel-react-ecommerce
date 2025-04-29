@@ -1,0 +1,106 @@
+@import '/resources/css/app.css';
+
+/* Tùy chỉnh màu sắc Filament dựa trên biến CSS hiện có */
+:root {
+    /* Màu chính - Mocha */
+    --color-primary-50: #f9f6f2;
+    --color-primary-100: #f1e8da;
+    --color-primary-200: #e2d1b7;
+    --color-primary-300: #d0b692;
+    --color-primary-400: #b99b6d;
+    --color-primary-500: #9E7A47; /* Mocha */
+    --color-primary-600: #8c6b3a;
+    --color-primary-700: #785731;
+    --color-primary-800: #614629;
+    --color-primary-900: #4E3629; /* Dark Brown */
+
+    /* Màu thứ hai - Soft Green */
+    --color-secondary-50: #f2f7f2;
+    --color-secondary-100: #e3efe3;
+    --color-secondary-200: #d0e5d0;
+    --color-secondary-300: #badbba;
+    --color-secondary-400: #A7C5A4; /* Soft Green */
+    --color-secondary-500: #8fb38d;
+    --color-secondary-600: #7a9e78;
+    --color-secondary-700: #658463;
+    --color-secondary-800: #516b4f;
+    --color-secondary-900: #425840;
+
+    /* Màu nhấn - Amber Gold */
+    --color-accent-50: #fffaec;
+    --color-accent-100: #fff4d3;
+    --color-accent-200: #ffe9a7;
+    --color-accent-300: #ffdd7b;
+    --color-accent-400: #ffce4e;
+    --color-accent-500: #FFBF49; /* Amber Gold */
+    --color-accent-600: #f0a532;
+    --color-accent-700: #db8a26;
+    --color-accent-800: #b36d21;
+    --color-accent-900: #915a1e;
+
+    /* Màu khác từ app.css */
+    --color-beige: #D8C8A4;
+    --color-light-gold: #D9C97E;
+    --color-charcoal: #333333;
+}
+
+/* Tùy chỉnh các phần tử giao diện Filament */
+.fi-sidebar {
+    @apply bg-white dark:bg-charcoal;
+}
+
+.fi-sidebar-header {
+    @apply border-b border-gray-200 dark:border-gray-700;
+}
+
+.fi-sidebar-item {
+    @apply text-gray-700 dark:text-gray-300;
+}
+
+.fi-sidebar-item-active {
+    @apply bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-400;
+}
+
+.fi-btn-color-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white;
+}
+
+.fi-tabs-item-active {
+    @apply border-primary-500 text-primary-600 dark:text-primary-400;
+}
+
+.fi-modal {
+    @apply bg-white dark:bg-gray-900;
+}
+
+.fi-header {
+    @apply bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700;
+}
+
+/* Tùy chỉnh định dạng form */
+.fi-input {
+    @apply border-gray-300 dark:border-gray-700 focus:ring-primary-500 focus:border-primary-500;
+}
+
+.fi-select {
+    @apply border-gray-300 dark:border-gray-700 focus:ring-primary-500 focus:border-primary-500;
+}
+
+/* Áp dụng các class từ app.css */
+.fi-ta-text {
+    @apply wysiwyg-output;
+}
+
+/* Sử dụng lại các style button từ app.css */
+.fi-btn.fi-btn-size-md.fi-btn-color-primary {
+    @apply btn-brand-primary;
+}
+
+.fi-btn.fi-btn-size-md.fi-btn-color-secondary {
+    @apply btn-brand-secondary;
+}
+
+/* Tùy chỉnh heading trong Filament */
+.fi-section-header-heading {
+    @apply section-heading;
+}

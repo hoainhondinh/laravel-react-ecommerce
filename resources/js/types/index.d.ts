@@ -1,4 +1,5 @@
 import { Config } from 'ziggy-js';
+import { Product } from './index';
 
 export interface User {
   id: number;
@@ -67,12 +68,32 @@ export type Product = {
     sold_count: number; // Số lượng đã bán của biến thể
   }>
 }
+export interface ProductsGridProps {
+  products: Product[];
+  pagination?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from?: number;
+    to?: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+    links?: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+  };
+  emptyMessage?: string;
+}
 export interface Department {
   id: number;
   name: string;
   slug: string;
   products_count?: number;
   active: boolean;
+  image_url: string;
 }
 // Cập nhật CartItem để hỗ trợ giá gốc
 export type CartItem = {
@@ -107,7 +128,7 @@ interface OrderItem {
     slug: string;
     image: string;
   };
-  options: string | any[]; // Could be a JSON string or an array
+  options: string | any[];
 }
 export interface Order {
   id: number;
@@ -193,6 +214,14 @@ export interface Banner {
 }
 export interface ResourceResponse<T> {
   data: T[];
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+  prev_page_url: string | null;
+  next_page_url: string | null;
+  from: number;
+  to: number;
 }
 
 export type PaginationProps<T> = {

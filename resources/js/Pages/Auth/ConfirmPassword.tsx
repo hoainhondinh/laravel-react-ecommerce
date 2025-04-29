@@ -7,50 +7,64 @@ import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 export default function ConfirmPassword() {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        password: '',
+  const { data, setData, post, processing, errors, reset } = useForm({
+    password: '',
+  });
+
+  const submit: FormEventHandler = (e) => {
+    e.preventDefault();
+
+    post(route('password.confirm'), {
+      onFinish: () => reset('password'),
     });
+  };
 
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
+  return (
+    <GuestLayout>
+      <Head title="Xác nhận mật khẩu" />
 
-        post(route('password.confirm'), {
-            onFinish: () => reset('password'),
-        });
-    };
+      {/* Container cho phần giữa layout */}
+      <div className="container mx-auto py-16 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-408px)]">
+        <div className="max-w-md mx-auto">
+          {/* Phần tiêu đề và mô tả */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-dark-brown">Xác nhận mật khẩu</h2>
+            <p className="mt-2 text-sm text-mocha">
+              Đây là khu vực bảo mật. Vui lòng xác nhận mật khẩu trước khi tiếp tục.
+            </p>
+          </div>
 
-    return (
-        <GuestLayout>
-            <Head title="Confirm Password" />
+          {/* Card chính chứa form xác nhận mật khẩu */}
+          <div className="card bg-white shadow-lg border border-beige/50 rounded-lg">
+            <div className="card-body p-8">
+              <form onSubmit={submit}>
+                <div className="mb-6">
+                  <InputLabel htmlFor="password" value="Mật khẩu" className="font-semibold text-dark-brown" />
 
-            <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                This is a secure area of the application. Please confirm your
-                password before continuing.
+                  <TextInput
+                    id="password"
+                    type="password"
+                    name="password"
+                    value={data.password}
+                    className="mt-2 block w-full"
+                    isFocused={true}
+                    onChange={(e) => setData('password', e.target.value)}
+                    errorMessage="Vui lòng nhập mật khẩu"
+                  />
+
+                  <InputError message={errors.password} className="mt-2" />
+                </div>
+
+                <div className="flex items-center justify-center">
+                  <PrimaryButton className="w-full bg-mocha hover:bg-dark-brown transition-colors" disabled={processing}>
+                    Xác nhận
+                  </PrimaryButton>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={submit}>
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        isFocused={true}
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Confirm
-                    </PrimaryButton>
-                </div>
-            </form>
-        </GuestLayout>
-    );
+          </div>
+        </div>
+      </div>
+    </GuestLayout>
+  );
 }

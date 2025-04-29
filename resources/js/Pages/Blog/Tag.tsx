@@ -6,7 +6,7 @@ import BlogItem from '@/Components/App/BlogItem';
 import Pagination from '@/Components/Blog/Pagination';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-interface BlogTagProps {
+interface BlogTagProps extends Record<string, unknown>{
   tag: Tag;
   posts: {
     data: BlogPost[];

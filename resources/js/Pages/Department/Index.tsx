@@ -1,22 +1,23 @@
 import React from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { PageProps, PaginationProps, Product, Department } from '@/types';
+import { PageProps, Product, Department, ResourceResponse } from '@/types';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ProductItem from '@/Components/App/ProductItem';
 
 interface DepartmentIndexProps {
-  products: PaginationProps<Product>;
+  products: ResourceResponse<Product>;
   currentDepartment?: Department;
 }
 
 export default function Index({
                                 products,
                                 currentDepartment
-                              }: PageProps<DepartmentIndexProps>) {
+                              }: DepartmentIndexProps) {
   // Get departments from shared props
-  const { departments = [] } = usePage<PageProps>().props;
-  const departmentsList = departments || [];
+  const { departments } = usePage<PageProps>().props;
+  const departmentsList = departments.data || [];
   const productsList = products?.data || [];
+
   return (
     <AuthenticatedLayout>
       <Head title={currentDepartment ? currentDepartment.name : 'Danh mục sản phẩm'} />
@@ -44,7 +45,7 @@ export default function Index({
                       Tất cả sản phẩm
                     </Link>
                   </li>
-                  {departments.map(department => (
+                  {departmentsList.map((department: Department) => (
                     <li key={department.id}>
                       <Link
                         href={route('department.show', { department: department.slug })}

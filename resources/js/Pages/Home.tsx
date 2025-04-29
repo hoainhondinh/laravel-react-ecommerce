@@ -1,27 +1,17 @@
 import React from 'react';
-import { PageProps, Product, BlogPost, Banner, Department } from '@/types';
+import { PageProps, Product, BlogPost, Banner, Department, ResourceResponse } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import BannerCarousel from "@/Components/App/BannerCarousel";
 import ProductsGrid from '@/Components/App/ProductsGrid';
 
 interface HomeProps extends PageProps {
-  departments: {
-    data: Department[]
-  };
-  newProducts: {
-    data: Product[]
-  };
-  saleProducts: {
-    data: Product[]
-  };
-  bestSellerProducts: {
-    data: Product[]
-  };
+  departments: ResourceResponse<Department>;
+  newProducts: ResourceResponse<Product>;
+  saleProducts: ResourceResponse<Product>;
+  bestSellerProducts: ResourceResponse<Product>;
   departmentProducts?: {
-    [key: string]: {
-      data: Product[]
-    }
+    [key: string]: ResourceResponse<Product>
   };
   blogPosts: BlogPost[];
   banners?: Banner[];
@@ -44,7 +34,7 @@ const Home: React.FC<HomeProps> = ({
 
   return (
     <AuthenticatedLayout>
-      <Head title="Yến Sào - Thương Hiệu Yến Cao Cấp"/>
+      <Head title="Yến Sào Xuân Mạnh - Tổ Yến Từ Tâm"/>
 
       {/* Hero Banner Section */}
       <section className="w-full relative">
@@ -54,8 +44,8 @@ const Home: React.FC<HomeProps> = ({
           <div className="w-full h-80 bg-[#4E3629] flex items-center justify-center relative overflow-hidden">
             <div className="absolute w-full h-full bg-gradient-to-r from-[#4E3629] to-[#9E7A47] opacity-80"></div>
             <div className="relative z-10 text-center px-4">
-              <h1 className="text-4xl md:text-5xl font-bold text-[#FFBF49] mb-4">Yến Sào</h1>
-              <p className="text-xl text-white">Thương Hiệu Yến Cao Cấp</p>
+              <h1 className="text-4xl md:text-5xl font-bold text-[#FFBF49] mb-4">Yến Sào Xuân Mạnh</h1>
+              <p className="text-xl text-white">Tổ Yến Từ Tâm</p>
             </div>
             <div className="absolute bottom-0 right-0 w-full h-12 bg-[#4E3629]/20 backdrop-blur-sm"></div>
           </div>
@@ -79,11 +69,22 @@ const Home: React.FC<HomeProps> = ({
                   className="group"
                 >
                   <div className="bg-white border border-[#D8C8A4] rounded-lg p-6 text-center hover:shadow-md transition-all duration-300 h-full flex flex-col items-center justify-center group-hover:border-[#9E7A47]">
-                    <div className="w-20 h-20 rounded-full bg-[#F9F7F1] flex items-center justify-center mb-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#9E7A47]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                      </svg>
-                    </div>
+                    {/* Hiển thị hình ảnh department thay vì icon */}
+                    {department.image_url ? (
+                      <div className="w-20 h-20 rounded-full overflow-hidden mb-4">
+                        <img
+                          src={department.image_url}
+                          alt={department.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-[#F9F7F1] flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#9E7A47]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                      </div>
+                    )}
                     <h3 className="text-xl font-medium text-[#4E3629] mb-2 group-hover:text-[#9E7A47]">
                       {department.name}
                     </h3>
@@ -91,8 +92,8 @@ const Home: React.FC<HomeProps> = ({
                       {department.products_count || 0} sản phẩm
                     </p>
                     <span className="px-4 py-2 bg-[#D8C8A4]/30 text-[#4E3629] rounded-md group-hover:bg-[#9E7A47] group-hover:text-white transition-colors">
-                      Xem sản phẩm
-                    </span>
+                    Xem sản phẩm
+                </span>
                   </div>
                 </Link>
               ))
@@ -101,7 +102,9 @@ const Home: React.FC<HomeProps> = ({
                 Không có danh mục nào.
               </div>
             )}
+
           </div>
+
         </div>
       </section>
 

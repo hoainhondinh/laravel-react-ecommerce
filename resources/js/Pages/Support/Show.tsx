@@ -20,7 +20,7 @@ interface SupportPageLink {
   slug: string;
 }
 
-interface SupportPageProps {
+interface SupportPageProps extends Record<string, unknown> {
   page: SupportPage;
   supportPages: SupportPageLink[];
 }

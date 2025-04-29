@@ -1,51 +1,66 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { PageProps } from '@/types';
+import { PageProps, Order, OrderItem } from '@/types';
 import AccountLayout from '@/Layouts/AccountLayout';
 import CurrencyFormatter from '@/Components/Core/CurrencyFormatter';
 
-interface OrderItem {
-  id: number;
-  product_id: number;
-  variation_id: number | null;
-  quantity: number;
-  price: number;
-  product: {
-    title: string;
-    slug: string;
-    image: string;
-    current_stock: number; // Số lượng tồn kho hiện tại
+// Hàm trợ giúp để chuyển đổi và hiển thị tùy chọn
+const formatOrderItemOptions = (options: string | any[] | undefined): string => {
+  // Trả về chuỗi rỗng nếu không có options
+  if (options === undefined || options === null) return '';
+
+  // Nếu là chuỗi, thử parse JSON
+  if (typeof options === 'string') {
+    try {
+      const parsedOptions = JSON.parse(options);
+      return formatOrderItemOptions(parsedOptions);
+    } catch (e) {
+      return options; // Trả về nguyên bản nếu không parse được
+    }
   }
-  options: string[];
-  current_stock: number; // Số lượng tồn kho hiện tại của biến thể
-}
 
-interface OrderHistory {
-  id: number;
-  status: string;
-  note: string;
-  created_at: string;
-}
+  // Xử lý mảng
+  if (Array.isArray(options)) {
+    return options.map(opt => {
+      // Nếu là đối tượng có thuộc tính name
+      if (typeof opt === 'object' && opt !== null && 'name' in opt) {
+        return (opt as { name?: string }).name || JSON.stringify(opt);
+      }
+      // Nếu là đối tượng khác
+      if (typeof opt === 'object') {
+        return JSON.stringify(opt);
+      }
+      // Các giá trị nguyên thủy
+      return String(opt);
+    }).filter(Boolean).join(', ');
+  }
 
-interface Order {
-  id: number;
-  total_price: number;
-  status: string;
-  payment_method: string;
-  payment_status: string;
-  created_at: string;
-  updated_at: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  cancel_reason: string | null;
-  canceled_at: string | null;
-  items: OrderItem[];
-  histories: OrderHistory[];
-  can_be_canceled: boolean; // Kiểm tra xem đơn hàng có thể hủy không
-}
+  // Xử lý đối tượng
+  if (typeof options === 'object' && options !== null) {
+    return Object.entries(options)
+      .map(([key, value]) => {
+        // Bỏ qua các giá trị null hoặc undefined
+        if (value === null || value === undefined) return '';
 
+        // Xử lý đối tượng
+        if (typeof value === 'object') {
+          // Nếu có thuộc tính name
+          if (value !== null && 'name' in value) {
+            return `${key}: ${(value as { name?: string }).name || JSON.stringify(value)}`;
+          }
+          return `${key}: ${JSON.stringify(value)}`;
+        }
+
+        // Các giá trị nguyên thủy
+        return `${key}: ${value}`;
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  // Trường hợp còn lại
+  return String(options);
+};
 export default function Show({
                                order
                              }: PageProps<{
@@ -148,7 +163,6 @@ export default function Show({
 
   return (
     <AccountLayout title={`Chi tiết đơn hàng #${order.id}`}>
-      {/* Trạng thái đơn hàng hiện tại */}
       <div className="flex flex-col md:flex-row justify-between items-start mb-6">
         <div>
           <div className="mb-2 flex items-center">
@@ -224,50 +238,9 @@ export default function Show({
 
                     {item.options && (
                       <div className="text-sm text-gray-500 mt-1">
-                        {(() => {
-                          // Parse JSON string if needed
-                          let optionsData = item.options;
-                          if (typeof optionsData === 'string') {
-                            try {
-                              optionsData = JSON.parse(optionsData);
-                            } catch (e) {
-                              return optionsData; // Return as is if not valid JSON
-                            }
-                          }
-
-                          // Handle different data types
-                          if (Array.isArray(optionsData)) {
-                            return optionsData.map(opt =>
-                              typeof opt === 'object' && opt !== null
-                                ? (opt.name ? opt.name : JSON.stringify(opt))
-                                : String(opt)
-                            ).join(', ');
-                          } else if (typeof optionsData === 'object' && optionsData !== null) {
-                            return Object.entries(optionsData)
-                              .map(([key, value]) => {
-                                if (value === null || value === undefined) return '';
-                                if (typeof value === 'object') return `${key}: ${value.name || JSON.stringify(value)}`;
-                                return `${key}: ${value}`;
-                              })
-                              .filter(Boolean)
-                              .join(', ');
-                          }
-
-                          return String(optionsData);
-                        })()}
+                        {formatOrderItemOptions(item.options)}
                       </div>
                     )}
-
-                    {/* Hiển thị thông tin tồn kho hiện tại */}
-                    <div className="text-xs mt-1">
-                      {item.current_stock <= 0 ? (
-                        <span className="text-red-500">Hết hàng</span>
-                      ) : item.current_stock <= 5 ? (
-                        <span className="text-orange-500">Còn {item.current_stock} sản phẩm</span>
-                      ) : (
-                        <span className="text-green-500">Còn hàng</span>
-                      )}
-                    </div>
 
                     <div className="flex justify-between items-center mt-2">
                       <span className="text-sm text-gray-500">SL: {item.quantity}</span>
@@ -291,63 +264,67 @@ export default function Show({
           </div>
 
           {/* Order history timeline */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="bg-gray-50 p-4 border-b border-gray-200">
-              <h3 className="font-medium">Lịch sử đơn hàng</h3>
-            </div>
+          {order.histories && order.histories.length > 0 && (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 p-4 border-b border-gray-200">
+                <h3 className="font-medium">Lịch sử đơn hàng</h3>
+              </div>
 
-            <div className="p-4">
-              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-300 before:to-transparent">
-                {order.histories.map((history, index) => (
-                  <div key={history.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-gray-100 text-gray-700 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                      {history.status === 'pending' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                      {history.status === 'processing' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                      {history.status === 'completed' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                      {history.status === 'canceled' && (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      )}
-                    </div>
-
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-lg border border-gray-200 shadow">
-                      <div className="flex items-center justify-between space-x-2 mb-1">
-                        <div className="font-semibold text-gray-900">
-                          {history.status === 'pending' && 'Đơn hàng đã được tạo'}
-                          {history.status === 'processing' && 'Đơn hàng đang được xử lý'}
-                          {history.status === 'completed' && 'Đơn hàng đã hoàn thành'}
-                          {history.status === 'canceled' && 'Đơn hàng đã bị hủy'}
-                        </div>
-                        <time className="text-xs text-gray-500">
-                          {new Date(history.created_at).toLocaleDateString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          })}
-                        </time>
+              <div className="p-4">
+                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-300 before:to-transparent">
+                  {order.histories.map((history, index) => (
+                    <div key={history.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-gray-100 text-gray-700 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                        {history.status === 'pending' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                        {history.status === 'processing' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                        {history.status === 'completed' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                        {history.status === 'canceled' && (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
                       </div>
-                      <div className="text-sm text-gray-600">{history.note}</div>
+
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-lg border border-gray-200 shadow">
+                        <div className="flex items-center justify-between space-x-2 mb-1">
+                          <div className="font-semibold text-gray-900">
+                            {history.status === 'pending' && 'Đơn hàng đã được tạo'}
+                            {history.status === 'processing' && 'Đơn hàng đang được xử lý'}
+                            {history.status === 'completed' && 'Đơn hàng đã hoàn thành'}
+                            {history.status === 'canceled' && 'Đơn hàng đã bị hủy'}
+                          </div>
+                          <time className="text-xs text-gray-500">
+                            {new Date(history.created_at).toLocaleDateString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </time>
+                        </div>
+                        {history.note && (
+                          <div className="text-sm text-gray-600">{history.note}</div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right column - Order details */}

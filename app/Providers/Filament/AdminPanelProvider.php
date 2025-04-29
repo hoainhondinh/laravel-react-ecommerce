@@ -20,6 +20,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Database\Eloquent\Model;
+
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -28,11 +29,20 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandLogo(asset('images/logo-light.png'))      // Logo cho chế độ sáng
+            ->darkModeBrandLogo(asset('images/logo-dark.png')) // Logo cho chế độ tối
             ->sidebarWidth('14rem')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::hex('#9E7A47'),    // Mocha
+                'secondary' => Color::hex('#A7C5A4'),  // Soft Green
+                'accent' => Color::hex('#FFBF49'),     // Amber Gold
+                'danger' => Color::hex('#F87272'),     // Error
+                'success' => Color::hex('#36D399'),    // Success
+                'warning' => Color::hex('#FBBD23'),    // Warning
             ])
+            ->darkMode(true)
+            ->collapsibleNavigationGroups()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -41,7 +51,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+//                Widgets\FilamentInfoWidget::class,
             ])
             ->middleware(middleware: [
                 EncryptCookies::class,

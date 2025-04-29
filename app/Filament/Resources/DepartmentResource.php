@@ -11,11 +11,13 @@ use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,14 +34,24 @@ class DepartmentResource extends Resource
     {
         return $form
             ->schema([
-                Textinput::make('name')
+                TextInput::make('name')
                     ->live(onBlur: true)
                     ->required()
                     ->afterStateUpdated(function (string $operation, $state, callable $set) {
-                        $set('slug', Str::slug($state));
+                        if ($operation === 'create') {
+                            $set('slug', Str::slug($state));
+                        }
                     }),
-                Textinput::make('slug')
+                TextInput::make('slug')
                     ->required(),
+                SpatieMediaLibraryFileUpload::make('department_image')
+                    ->collection('department_image')
+                    ->image()
+                    ->imageResizeMode('cover')
+                    ->imageCropAspectRatio('1:1')
+                    ->imageResizeTargetWidth('300')
+                    ->imageResizeTargetHeight('300')
+                    ->label('Hình ảnh'),
                 Checkbox::make('active'),
             ]);
     }
@@ -48,6 +60,11 @@ class DepartmentResource extends Resource
     {
         return $table
             ->columns([
+                SpatieMediaLibraryImageColumn::make('department_image')
+                    ->collection('department_image')
+                    ->conversion('thumb')
+                    ->circular()
+                    ->label('Hình ảnh'),
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
@@ -131,6 +148,7 @@ class DepartmentResource extends Resource
                 ]),
             ]);
     }
+
     public static function getRelations(): array
     {
         return [

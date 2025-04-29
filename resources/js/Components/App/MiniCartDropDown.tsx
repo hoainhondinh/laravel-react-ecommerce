@@ -2,7 +2,13 @@ import React from 'react';
 import {Link, usePage} from "@inertiajs/react";
 import CurrencyFormatter from "@/Components/Core/CurrencyFormatter";
 import {productRoute} from "@/helper";
+import { CartItem } from '@/types';
 
+interface PageProps {
+  totalQuantity: number;
+  totalPrice: number;
+  miniCartItems: CartItem[];
+}
 function MiniCartDropDown() {
   const {totalQuantity, totalPrice, miniCartItems} = usePage().props;
 
@@ -41,7 +47,7 @@ function MiniCartDropDown() {
                 Bạn chưa có sản phẩm nào trong giỏ hàng.
               </div>
             )}
-            {miniCartItems.map((item) => (
+            {miniCartItems.map((item: CartItem) => (
               <div key={item.id} className="flex gap-4 p-3 border-b border-[#D8C8A4] last:border-0">
                 <Link href={productRoute(item)}
                       className="w-16 h-16 flex justify-center items-center bg-[#F9F5EB] rounded-md overflow-hidden">

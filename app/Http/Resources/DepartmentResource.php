@@ -17,6 +17,7 @@ class DepartmentResource extends JsonResource
             'slug' => $this->slug,
             'products_count' => $this->whenCounted('products'),
             'active' => (bool)$this->active,
+            'image_url' => $this->image_url,
         ];
     }
 }

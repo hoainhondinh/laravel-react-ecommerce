@@ -40,6 +40,8 @@ export default function Addresses({ addresses }: PageProps<{ addresses: Address[
 
   const openEditModal = (address: Address) => {
     setEditingAddress(address);
+
+    // Sử dụng phương thức setData của Inertia với toàn bộ object
     setData({
       name: address.name,
       phone: address.phone,
@@ -67,6 +69,11 @@ export default function Addresses({ addresses }: PageProps<{ addresses: Address[
         preserveScroll: true,
       });
     }
+  };
+
+  // Tạo wrapper setData phù hợp với kiểu AddressFormData
+  const handleSetData = (key: keyof typeof data, value: any) => {
+    setData(key, value);
   };
 
   return (
@@ -131,7 +138,7 @@ export default function Addresses({ addresses }: PageProps<{ addresses: Address[
 
               <AddressForm
                 data={data}
-                setData={setData}
+                setData={handleSetData}
                 errors={errors}
                 processing={processing}
                 handleSubmit={handleSubmit}

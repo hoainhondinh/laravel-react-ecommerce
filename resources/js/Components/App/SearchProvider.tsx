@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useRef, useEffect } from 'react';
-import axios, { CancelTokenSource } from 'axios';
+import { router } from '@inertiajs/react';
 import debounce from 'lodash.debounce';
 
 export interface SearchResult {
@@ -131,23 +131,23 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({
   const [searchStatus, setSearchStatus] = useState<'idle' | 'searching' | 'success' | 'fallback' | 'error'>('idle');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Ref để quản lý request
-  const cancelTokenSourceRef = useRef<CancelTokenSource | null>(null);
+  // Ref để theo dõi request hiện tại
+  const abortControllerRef = useRef<AbortController | null>(null);
   const lastQueryRef = useRef<string>('');
   const requestCountRef = useRef(0);
 
   // Khởi tạo cache thông minh
-  const searchCache = new SmartSearchCache(maxCacheSize, cacheMaxAge);
+  const searchCache = useRef(new SmartSearchCache(maxCacheSize, cacheMaxAge)).current;
 
   // Hàm thực hiện search với quản lý request thông minh
   const performSearchRequest = useCallback(async (searchQuery: string) => {
-    // Kiểm tra và hủy request cũ
-    if (cancelTokenSourceRef.current) {
-      cancelTokenSourceRef.current.cancel('New search request');
+    // Hủy request cũ nếu có
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
-    // Tạo cancel token mới
-    cancelTokenSourceRef.current = axios.CancelToken.source();
+    // Tạo abort controller mới
+    abortControllerRef.current = new AbortController();
 
     // Tăng số lượng request
     requestCountRef.current++;
@@ -166,17 +166,29 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({
         return;
       }
 
-      const response = await axios.get(route('api.search.suggestions'), {
-        params: {
-          q: searchQuery,
-          request_count: requestCountRef.current // Thêm request count để tracking
-        },
-        cancelToken: cancelTokenSourceRef.current.token,
-        timeout: 5000 // Giới hạn thời gian request
+      // Sử dụng router.visit với signal để có thể hủy request
+      const requestId = requestCountRef.current;
+
+      // Sử dụng fetch API với signal từ AbortController
+      const response = await fetch(route('api.search.suggestions', {
+        q: searchQuery,
+        request_count: requestId
+      }), {
+        signal: abortControllerRef.current.signal,
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       });
 
-      const results = response.data.products || [];
-      const status = response.data.searchStatus || 'success';
+      // Kiểm tra response
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const results = data.products || [];
+      const status = data.searchStatus || 'success';
 
       // Chỉ cập nhật nếu query không thay đổi
       if (searchQuery === lastQueryRef.current) {
@@ -187,13 +199,10 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({
         setSearchStatus(status);
         setShowSuggestions(results.length > 0);
       }
-    } catch (error) {
-      if (axios.isCancel(error)) {
-        console.log('Request canceled', error.message);
-      } else if (error.code === 'ECONNABORTED') {
-        // Xử lý timeout
-        setSearchStatus('error');
-        console.error('Request timeout');
+    } catch (error: unknown) {
+      // Kiểm tra xem lỗi có phải do hủy request không
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.log('Request canceled');
       } else {
         console.error('Lỗi tìm kiếm:', error);
         setSuggestions([]);
@@ -244,8 +253,9 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({
   // Reset trạng thái search
   const resetSearch = useCallback(() => {
     // Hủy request đang chờ
-    if (cancelTokenSourceRef.current) {
-      cancelTokenSourceRef.current.cancel('Search reset');
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
 
     setQuery('');
@@ -260,8 +270,8 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({
   // Cleanup khi component unmount
   useEffect(() => {
     return () => {
-      if (cancelTokenSourceRef.current) {
-        cancelTokenSourceRef.current.cancel('Component unmounted');
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
       debouncedSearch.cancel();
     };

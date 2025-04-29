@@ -72,7 +72,7 @@ Route::controller(CheckoutController::class)->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', function () {
         return Inertia::render('Dashboard');
-    })->name('dashboard');
+    })->name('user.dashboard');
 
     // Profile routes
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');

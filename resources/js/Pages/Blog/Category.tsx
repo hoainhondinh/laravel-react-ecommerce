@@ -6,7 +6,7 @@ import BlogItem from '@/Components/App/BlogItem';
 import Pagination from '@/Components/Blog/Pagination';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-interface BlogCategoryProps {
+interface BlogCategoryProps extends Record<string, unknown>{
   category: Category;
   posts: {
     data: BlogPost[];

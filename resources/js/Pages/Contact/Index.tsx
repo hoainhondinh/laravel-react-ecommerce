@@ -12,8 +12,17 @@ interface ContactFormErrors {
   limit_exceeded?: string;
 }
 
+interface ContactFormData {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+  honeypot: string;
+}
+
 export default function Index({ }: PageProps) {
-  const { data, setData, post, processing, errors, reset } = useForm({
+  const { data, setData, post, processing, errors, reset } = useForm<ContactFormData>({
     name: '',
     email: '',
     phone: '',
@@ -26,7 +35,7 @@ export default function Index({ }: PageProps) {
   const [clientErrors, setClientErrors] = useState<ContactFormErrors>({});
 
   // Validate riêng từng trường khi blur
-  const validateField = (field: string, value: string) => {
+  const validateField = (field: keyof ContactFormData, value: string) => {
     let error = '';
 
     switch (field) {
@@ -86,16 +95,16 @@ export default function Index({ }: PageProps) {
   // Xử lý onBlur event
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    validateField(name, value);
+    validateField(name as keyof ContactFormData, value);
   };
 
   // Validate tất cả các trường khi submit
   const validateForm = () => {
-    const fields = ['name', 'email', 'phone', 'subject', 'message'];
+    const fields: (keyof ContactFormData)[] = ['name', 'email', 'phone', 'subject', 'message'];
     let isValid = true;
 
     fields.forEach(field => {
-      const valid = validateField(field, data[field as keyof typeof data] as string);
+      const valid = validateField(field, data[field]);
       if (!valid) isValid = false;
     });
 
@@ -156,6 +165,11 @@ export default function Index({ }: PageProps) {
       "areaServed": "VN",
       "availableLanguage": "Vietnamese"
     }
+  };
+
+  // Helper function to get error message from server or client validation
+  const getErrorMessage = (field: keyof ContactFormData | 'limit_exceeded') => {
+    return (errors as any)[field] || clientErrors[field as keyof ContactFormErrors];
   };
 
   return (
@@ -271,9 +285,9 @@ export default function Index({ }: PageProps) {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit}>
-                  {errors.limit_exceeded && (
+                  {getErrorMessage('limit_exceeded') && (
                     <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                      <p className="text-red-600">{errors.limit_exceeded}</p>
+                      <p className="text-red-600">{getErrorMessage('limit_exceeded')}</p>
                     </div>
                   )}
 
@@ -287,12 +301,12 @@ export default function Index({ }: PageProps) {
                       onChange={(e) => setData('name', e.target.value)}
                       onBlur={handleBlur}
                       className={`w-full px-4 py-2 rounded-md border ${
-                        errors.name || clientErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
+                        getErrorMessage('name') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
                       } focus:outline-none focus:ring-1`}
                       required
                     />
-                    {(errors.name || clientErrors.name) && (
-                      <div className="text-red-500 text-sm mt-1">{errors.name || clientErrors.name}</div>
+                    {getErrorMessage('name') && (
+                      <div className="text-red-500 text-sm mt-1">{getErrorMessage('name')}</div>
                     )}
                   </div>
 
@@ -306,12 +320,12 @@ export default function Index({ }: PageProps) {
                       onChange={(e) => setData('email', e.target.value)}
                       onBlur={handleBlur}
                       className={`w-full px-4 py-2 rounded-md border ${
-                        errors.email || clientErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
+                        getErrorMessage('email') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
                       } focus:outline-none focus:ring-1`}
                       required
                     />
-                    {(errors.email || clientErrors.email) && (
-                      <div className="text-red-500 text-sm mt-1">{errors.email || clientErrors.email}</div>
+                    {getErrorMessage('email') && (
+                      <div className="text-red-500 text-sm mt-1">{getErrorMessage('email')}</div>
                     )}
                   </div>
 
@@ -326,12 +340,12 @@ export default function Index({ }: PageProps) {
                       onBlur={handleBlur}
                       placeholder="0xxx xxx xxx"
                       className={`w-full px-4 py-2 rounded-md border ${
-                        errors.phone || clientErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
+                        getErrorMessage('phone') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
                       } focus:outline-none focus:ring-1`}
                       required
                     />
-                    {(errors.phone || clientErrors.phone) && (
-                      <div className="text-red-500 text-sm mt-1">{errors.phone || clientErrors.phone}</div>
+                    {getErrorMessage('phone') && (
+                      <div className="text-red-500 text-sm mt-1">{getErrorMessage('phone')}</div>
                     )}
                   </div>
 
@@ -345,12 +359,12 @@ export default function Index({ }: PageProps) {
                       onChange={(e) => setData('subject', e.target.value)}
                       onBlur={handleBlur}
                       className={`w-full px-4 py-2 rounded-md border ${
-                        errors.subject || clientErrors.subject ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
+                        getErrorMessage('subject') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
                       } focus:outline-none focus:ring-1`}
                       required
                     />
-                    {(errors.subject || clientErrors.subject) && (
-                      <div className="text-red-500 text-sm mt-1">{errors.subject || clientErrors.subject}</div>
+                    {getErrorMessage('subject') && (
+                      <div className="text-red-500 text-sm mt-1">{getErrorMessage('subject')}</div>
                     )}
                   </div>
 
@@ -364,12 +378,12 @@ export default function Index({ }: PageProps) {
                       onBlur={handleBlur}
                       rows={5}
                       className={`w-full px-4 py-2 rounded-md border ${
-                        errors.message || clientErrors.message ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
+                        getErrorMessage('message') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary focus:ring-primary'
                       } focus:outline-none focus:ring-1`}
                       required
                     ></textarea>
-                    {(errors.message || clientErrors.message) && (
-                      <div className="text-red-500 text-sm mt-1">{errors.message || clientErrors.message}</div>
+                    {getErrorMessage('message') && (
+                      <div className="text-red-500 text-sm mt-1">{getErrorMessage('message')}</div>
                     )}
                     <div className="text-right text-sm text-gray-500 mt-1">
                       {data.message.length}/2000 ký tự
@@ -428,7 +442,8 @@ export default function Index({ }: PageProps) {
 
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-lg font-semibold text-neutral">Tôi có thể thanh toán bằng những phương thức nào?</h3>
-                <p className="mt-2 text-charcoal">Chúng tôi chấp nhận nhiều phương thức thanh toán bao gồm: thanh toán khi nhận hàng (COD), chuyển khoản ngân hàng, thẻ tín dụng/ghi nợ và các ví điện tử như MoMo, VNPay, ZaloPay.</p>
+                <p className="mt-2 text-charcoal">Chúng tôi chấp nhận nhiều phương thức thanh toán bao gồm: thanh toán khi nhận hàng (COD), chuyển khoản ngân hàng, thẻ tín dụng/ghi nợ và các
+                  ví điện tử như MoMo, VNPay, ZaloPay.</p>
               </div>
 
               <div className="bg-white p-6 rounded-lg shadow-md">

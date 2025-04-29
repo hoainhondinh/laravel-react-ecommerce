@@ -48,12 +48,11 @@ export default function EmailTest({ orders }: EmailTestProps) {
 
   return (
     <AuthenticatedLayout
-      title="Email Testing"
-      renderHeader={() => (
+      header={
         <h2 className="font-semibold text-xl text-gray-800 leading-tight">
           Email Testing
         </h2>
-      )}
+      }
     >
       <Head title="Email Testing" />
 
